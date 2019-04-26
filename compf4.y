@@ -5,30 +5,33 @@
 #include <string.h>           // declaraciones para cadenas
 #include <stdlib.h>           // declaraciones para exit ()
 #define FF fflush(stdout);    // para forzar la impresion inmediata
+typedef struct s_atributos { 
+    int valor;
+    char *cadena ; 
+} t_atributos ;  
+char temp [2048] ; 
+char *genera_cadena () ; 
+#define YYSTYPE t_atributos 
 %}
-%union {                      // El tipo de la pila tiene caracter dual
-      int valor ;             // - valor numerico de un NUMERO
-      char *cadena ;          // - para pasar los nombres de IDENTIFES
-}
-%token <valor> NUMERO         // Todos los token tienen un tipo para la pila
-%token <cadena> IDENTIF       // Identificador=variable
-%token <cadena> INTEGER       // identifica la definicion de un entero
-%token <cadena> STRING
-%token <cadena> MAIN          // identifica el comienzo del proc. main
-%token <cadena> WHILE         // identifica el bucle main
-%token <cadena> DO
-%token <cadena> IF
-%token <cadena> ELSE
-%token <cadena> PUTS
-%token <cadena> PRINTF
-%token <cadena> EQUAL
-%token <cadena> UNEQUAL
-%token <cadena> LESSOREQ
-%token <cadena> GREATEROREQ
-%token <cadena> AND
-%token <cadena> OR
-%token <cadena> ADDER
-%token <cadena> SUBSTRACTER
+%token NUMERO         // Todos los token tienen un tipo para la pila
+%token IDENTIF       // Identificador=variable
+%token INTEGER       // identifica la definicion de un entero
+%token STRING
+%token MAIN          // identifica el comienzo del proc. main
+%token WHILE         // identifica el bucle main
+%token DO
+%token IF
+%token ELSE
+%token PUTS
+%token PRINTF
+%token EQUAL
+%token UNEQUAL
+%token LESSOREQ
+%token GREATEROREQ
+%token AND
+%token OR
+%token ADDER
+%token SUBSTRACTER
 %right '='                    // es la ultima operacion que se debe realizar
 %right '?' ':'
 %left  AND OR '&' '|'
@@ -49,60 +52,110 @@ principal:     MAIN
                  ;
   
 def_var:              /* lambda */		{ ; }
-             | INTEGER IDENTIF { printf ("variable %s ", $2); FF; } restoDef_var';'		
+             | INTEGER IDENTIF { printf ("variable %s ", $2.cadena); FF; } restoDef_var';'		
                  def_var
              ;
 restoDef_var:         /* lambda */ 		{ printf("\n"); } 
-             | '[' expresion ']'        { printf("1 - cells allot\n"); }
+             | '[' expresion {printf("%s",$2.cadena);} ']'        { printf("1 - cells allot\n"); }
              ;
 codigo:               /* lambda */ 		{ ; }
-             | IDENTIF '=' expresion ';'	{ printf ("%s !\n", $1); FF; }
+             | IDENTIF '=' expresion ';'	{ printf ("%s %s !\n",$3.cadena, $1.cadena); FF; }
                  codigo 
-             | IDENTIF '[' expresion ']' '='{printf("\n");} expresion ';'	{ printf ("swap cells %s + !\n", $1); FF; }
+             | IDENTIF '[' expresion {printf("%s",$3.cadena);} ']' '=' {printf("\n");} expresion {printf("%s",$8.cadena);} ';'	{ printf ("swap cells %s + !\n", $1.cadena); FF; }
                  codigo 
              | WHILE 				    { printf ("begin ") ; }
-		        '(' expresion ')' 		{ printf (" while\n") ; }
+		        '(' expresion {printf("%s",$4.cadena);} ')' 		{ printf (" while\n") ; }
 		        '{' codigo '}'   		{ printf ("repeat\n") ; }
                  codigo 
-             | DO {printf("begin\n");FF;}'{' codigo '}' WHILE '(' expresion ')' ';' {printf("while repeat \n");FF;}
+             | DO {printf("begin\n");FF;}'{' codigo '}' WHILE '(' expresion {printf("%s",$8.cadena);} ')' ';' {printf("while repeat \n");FF;}
                  codigo
-             | IF '(' expresion ')' {printf("if\n");} '{' codigo '}' restoIf {printf("then\n");} codigo
-             | PUTS '(' STRING ')' ';' {printf(".\" %s\"\n" ,$3);} codigo
+             | IF '(' expresion {printf("%s",$3.cadena);} ')' {printf("if\n");} '{' codigo '}' restoIf {printf("then\n");} codigo
+             | PUTS '(' STRING ')' ';' {printf(".\" %s\"\n" ,$3.cadena);} codigo
              | PRINTF '(' STRING ',' expresiones ')' ';' codigo
+             | FOR '(' asignacion ';' expresion ';' asignacion ')' '{' codigo {imprimir tercera cosa for}'}' codigo
              ;
-expresiones: expresion {printf(".\n");}| expresion {printf(". ");}',' expresiones;
+expresiones: expresion {printf("%s",$1.cadena);} {printf(".\n");}| expresion {printf("%s",$1.cadena);} {printf(". ");}',' expresiones;
 restoIf:     /* lambda */ 
              | ELSE {printf("else\n");}'{' codigo '}';
-expresion:     termino				{ ; }
-             | expresion  '+' expresion		    { printf  ("+ ") ; }
-             | expresion  '-' expresion		    { printf  ("- ") ; }
-             | expresion  '*' expresion		    { printf  ("* ") ; }
-             | expresion  '/' expresion		    { printf  ("/ ") ; }
-             | expresion  EQUAL expresion	    { printf  ("= ") ; }
-             | expresion  UNEQUAL expresion	    { printf  ("= 0= ") ; }
-             | expresion  LESSOREQ expresion	{ printf  ("<= ") ; }
-             | expresion  '<' expresion		    { printf  ("< ") ; }
-             | expresion  '>' expresion	        { printf  ("> ") ; }
-             | expresion  '&' expresion		    { printf  ("and ") ; }
-             | expresion  '|' expresion		    { printf  ("or ") ; }
-             | expresion  AND expresion	        { printf  ("and ") ; }
-             | expresion  OR expresion	        { printf  ("or ") ; }
-             | expresion  '%' expresion		    { printf  ("mod ") ; }
-             | expresion '?' {printf("if\n");} expresion ':'{printf("\nelse\n");} expresion {printf("\nthen\n");}
+expresion:     termino				{ $$=$1; }
+             | expresion  '+' expresion		    {
+                                                    sprintf(temp,"%s %s + ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  '-' expresion		    {
+                                                    sprintf(temp,"%s %s - ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  '*' expresion		    {
+                                                    sprintf(temp,"%s %s * ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  '/' expresion		    {
+                                                    sprintf(temp,"%s %s / ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  EQUAL expresion	    {
+                                                    sprintf(temp,"%s %s = ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  UNEQUAL expresion	    {
+                                                    sprintf(temp,"%s %s = 0= ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  LESSOREQ expresion	{
+                                                    sprintf(temp,"%s %s <= ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  GREATEROREQ expresion	{
+                                                    sprintf(temp,"%s %s >= ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  '<' expresion		    {
+                                                    sprintf(temp,"%s %s < ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  '>' expresion	        {
+                                                    sprintf(temp,"%s %s > ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  '&' expresion		    {
+                                                    sprintf(temp,"%s %s and ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  '|' expresion		    {
+                                                    sprintf(temp,"%s %s or ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  AND expresion	        {
+                                                    sprintf(temp,"%s %s and ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  OR expresion	        {
+                                                    sprintf(temp,"%s %s or ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion  '%' expresion		    {
+                                                    sprintf(temp,"%s %s mod ",$1.cadena,$3.cadena);
+                                                    $$.cadena = genera_cadena(temp);
+                                                }
+             | expresion '?' expresion ':' expresion {
+                                                        sprintf(temp,"%s if\n%s\nelse\n%s\nthen\n",$1.cadena,$3.cadena,$5.cadena);
+                                                        $$.cadena = genera_cadena(temp);
+                                                     }
              ;
 
-termino:       operando				{ ; }
-             | '+' operando %prec SIGNO_UNARIO	{ ; }
-             | '-' operando %prec SIGNO_UNARIO	{ printf ("negate ") ; }
-             | '!' operando %prec SIGNO_UNARIO  { printf ("0= ") ; }
-             | operando ADDER %prec POSTFIX  { printf ("1+ ") ; }
-             | operando SUBSTRACTER %prec POSTFIX  { printf ("1- ") ; }
+termino:       operando				{ $$=$1; }
+             | '+' operando %prec SIGNO_UNARIO	{ $$=$2; }
+             | '-' operando %prec SIGNO_UNARIO	{ sprintf (temp,"%s negate ",$2.cadena);$$.cadena=genera_cadena(temp); }
+             | '!' operando %prec SIGNO_UNARIO  { sprintf (temp,"%s 0= ",$2.cadena);$$.cadena=genera_cadena(temp); }
+             | operando ADDER %prec POSTFIX  { sprintf (temp,"%s 1+ ",$2.cadena);$$.cadena=genera_cadena(temp); }
+             | operando SUBSTRACTER %prec POSTFIX  { sprintf (temp,"%s 1- ",$2.cadena);$$.cadena=genera_cadena(temp); }
              ;
 
-operando:      IDENTIF      		{ printf ("%s @ ", $1) ; }
-             | IDENTIF '[' expresion ']' { printf ("cells %s + @ ", $1) ; }
-             | NUMERO				{ printf ("%d ", $1) ; }
-             | '(' expresion ')'		{ ; }
+operando:      IDENTIF      		{ sprintf (temp,"%s @ ", $1.cadena) ;$$.cadena=genera_cadena(temp); }
+             | IDENTIF '[' expresion ']' { sprintf (temp,"cells %s + @ ", $1.cadena) ; }
+             | NUMERO				{sprintf(temp,"%d ",$1.valor);$$.cadena = genera_cadena(temp);}
+             | '(' expresion ')'		{ $$=$2; }
              ;
 
 %%
