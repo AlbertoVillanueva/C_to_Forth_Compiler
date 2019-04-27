@@ -1,3 +1,4 @@
+
 /* Alberto Villanueva Nieto Cristian Cabrera Pinto 04 */
 /* alberto.villanueva@alumnos.uc3m.es 100363778@alumnos.uc3m.es */
 %{                          // SECCION 1 Declaraciones de C-Yacc
@@ -22,6 +23,7 @@ char *genera_cadena () ;
 %token DO
 %token IF
 %token ELSE
+%token FOR
 %token PUTS
 %token PRINTF
 %token EQUAL
@@ -59,7 +61,7 @@ restoDef_var:         /* lambda */ 		{ printf("\n"); }
              | '[' expresion {printf("%s",$2.cadena);} ']'        { printf("1 - cells allot\n"); }
              ;
 codigo:               /* lambda */ 		{ ; }
-             | IDENTIF '=' expresion ';'	{ printf ("%s %s !\n",$3.cadena, $1.cadena); FF; }
+             | asignacion';'	{ printf ("%s \n", $1.cadena); FF; }
                  codigo 
              | IDENTIF '[' expresion {printf("%s",$3.cadena);} ']' '=' {printf("\n");} expresion {printf("%s",$8.cadena);} ';'	{ printf ("swap cells %s + !\n", $1.cadena); FF; }
                  codigo 
@@ -72,7 +74,9 @@ codigo:               /* lambda */ 		{ ; }
              | IF '(' expresion {printf("%s",$3.cadena);} ')' {printf("if\n");} '{' codigo '}' restoIf {printf("then\n");} codigo
              | PUTS '(' STRING ')' ';' {printf(".\" %s\"\n" ,$3.cadena);} codigo
              | PRINTF '(' STRING ',' expresiones ')' ';' codigo
-             | FOR '(' asignacion ';' expresion ';' asignacion ')' '{' codigo {imprimir tercera cosa for}'}' codigo
+             | FOR '(' asignacion ';' {printf("%s begin",$3.cadena); } expresion {printf("%s while\n",$6.cadena);}';' asignacion ')' '{' codigo {printf("%s repeat\n",$9.cadena);}'}' codigo
+             ;
+asignacion:  IDENTIF '=' expresion  { sprintf (temp,"%s %s !\n",$3.cadena, $1.cadena); $$.cadena=genera_cadena(temp) ; }
              ;
 expresiones: expresion {printf("%s",$1.cadena);} {printf(".\n");}| expresion {printf("%s",$1.cadena);} {printf(". ");}',' expresiones;
 restoIf:     /* lambda */ 
@@ -153,7 +157,7 @@ termino:       operando				{ $$=$1; }
              ;
 
 operando:      IDENTIF      		{ sprintf (temp,"%s @ ", $1.cadena) ;$$.cadena=genera_cadena(temp); }
-             | IDENTIF '[' expresion ']' { sprintf (temp,"cells %s + @ ", $1.cadena) ; }
+             | IDENTIF '[' expresion ']' { sprintf (temp,"%s cells %s + @ ", $3.cadena, $1.cadena);$$.cadena = genera_cadena(temp) ; }
              | NUMERO				{sprintf(temp,"%d ",$1.valor);$$.cadena = genera_cadena(temp);}
              | '(' expresion ')'		{ $$=$2; }
              ;
@@ -204,6 +208,7 @@ t_reservada pal_reservadas [] = { // define las palabras reservadas y los
     "do",           DO,
     "if",           IF,      
     "else",         ELSE,
+    "for",         FOR,
     "puts",         PUTS,
     "printf",       PRINTF,
     "==",           EQUAL,
@@ -366,7 +371,6 @@ int main ()
 {
     yyparse () ;
 }
-
 
 
 
