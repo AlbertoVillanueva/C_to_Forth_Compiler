@@ -9,7 +9,15 @@
 typedef struct s_atributos { 
     int valor;
     char *cadena ; 
-} t_atributos ;  
+} t_atributos ; 
+typedef struct simbolo_t {
+    char *nombre;
+    char *expresion;
+}simbolo;
+
+simbolo t_simbolos_matrices [50];
+int num_matrices = 0;
+int isMatrix; //0 no es una matriz y 1 es una matriz
 char temp [2048] ; 
 char *genera_cadena () ; 
 #define YYSTYPE t_atributos 
@@ -49,36 +57,139 @@ programa:      def_var principal 		{ ; }
              ;
 
 principal:     MAIN				
-                 '(' ')' '{' def_var { printf (": main \n"); FF; }
-                 codigo '}'  		 { printf (";\n"); FF; }
+                 '(' ')' '{' def_var    { 
+                                            printf (": main \n"); 
+                                            FF; 
+                                        }
+                 codigo '}'  		    { 
+                                            printf (";\n"); 
+                                            FF; 
+                                        }
                  ;
   
-def_var:              /* lambda */		{ ; }
-             | INTEGER IDENTIF { printf ("variable %s ", $2.cadena); FF; } restoDef_var';'		
-                 def_var
+def_var:     /* lambda */		{ ; }
+             | INTEGER IDENTIF  { 
+                                    printf ("variable %s ", $2.cadena); 
+                                    FF; 
+                                } 
+             restoDef_var       {   
+                                    if(isMatrix==1){
+                                        t_simbolos_matrices[num_matrices].nombre=genera_cadena($2.cadena);
+                                        num_matrices++;                                                                                                
+                                    }
+                                }
+               ';' def_var
              ;
-restoDef_var:         /* lambda */ 		{ printf("\n"); } 
-             | '[' expresion {printf("%s",$2.cadena);} ']'        { printf("1 - cells allot\n"); }
+restoDef_var: /* lambda */ 		{ 
+                                    printf("\n"); 
+                                } 
+             | '[' expresion    {
+                                    printf("%s",$2.cadena);
+                                } 
+                ']'  matrix      
              ;
-codigo:               /* lambda */ 		{ ; }
-             | asignacion';'	{ printf ("%s \n", $1.cadena); FF; }
+matrix:      /*lambda*/         { 
+                                    printf("1 - cells allot\n"); 
+                                    isMatrix=0;
+                                }
+             | '[' expresion    {
+                                    isMatrix=1; 
+                                    t_simbolos_matrices[num_matrices].expresion=genera_cadena($2.cadena);
+                                }
+               ']'              { 
+                                    printf("* cells allot\n"); 
+                                }
+             ;
+codigo:               /* lambda */ 		                        { ; }
+             | asignacion';'	                                { 
+                                                                    printf ("%s \n", $1.cadena); 
+                                                                    FF; 
+                                                                }
                  codigo 
-             | IDENTIF '[' expresion {printf("%s",$3.cadena);} ']' '=' {printf("\n");} expresion {printf("%s",$8.cadena);} ';'	{ printf ("swap cells %s + !\n", $1.cadena); FF; }
+             | WHILE 				                            { 
+                                                                    printf ("begin ") ; 
+                                                                }
+		        '(' expresion                                   {
+                                                                    printf("%s",$4.cadena);
+                                                                } 
+                ')' 		                                    { 
+                                                                    printf (" while\n") ; 
+                                                                }
+		        '{' codigo '}'   		                        { 
+                                                                    printf ("repeat\n") ; 
+                                                                }
                  codigo 
-             | WHILE 				    { printf ("begin ") ; }
-		        '(' expresion {printf("%s",$4.cadena);} ')' 		{ printf (" while\n") ; }
-		        '{' codigo '}'   		{ printf ("repeat\n") ; }
-                 codigo 
-             | DO {printf("begin\n");FF;}'{' codigo '}' WHILE '(' expresion {printf("%s",$8.cadena);} ')' ';' {printf("while repeat \n");FF;}
-                 codigo
-             | IF '(' expresion {printf("%s",$3.cadena);} ')' {printf("if\n");} '{' codigo '}' restoIf {printf("then\n");} codigo
-             | PUTS '(' STRING ')' ';' {printf(".\" %s\"\n" ,$3.cadena);} codigo
-             | PRINTF '(' STRING ',' expresiones ')' ';' codigo
-             | FOR '(' asignacion ';' {printf("%s begin",$3.cadena); } expresion {printf("%s while\n",$6.cadena);}';' asignacion ')' '{' codigo {printf("%s repeat\n",$9.cadena);}'}' codigo
+             |  DO                                              {
+                                                                    printf("begin\n");
+                                                                    FF;
+                                                                }
+                '{' codigo '}' WHILE '(' expresion              {
+                                                                    printf("%s",$8.cadena);
+                                                                }
+                ')' ';'                                         {
+                                                                    printf("while repeat \n");
+                                                                    FF;
+                                                                }
+                codigo
+             |  IF '(' expresion                                 {
+                                                                    printf("%s",$3.cadena);
+                                                                } 
+                ')'                                             {
+                                                                    printf("if\n");
+                                                                } 
+                '{' codigo '}' restoIf                          {
+                                                                    printf("then\n");
+                                                                }
+                codigo
+             |  PUTS '(' STRING ')' ';'                         {
+                                                                    printf(".\" %s\"\n" ,$3.cadena);
+                                                                } 
+                codigo
+             |  PRINTF '(' STRING ',' expresiones ')' ';' codigo
+             |  FOR '(' asignacion ';'                          {
+                                                                    printf("%s begin",$3.cadena); 
+                                                                } 
+                expresion                                       {
+                                                                    printf("%s while\n",$6.cadena);
+                                                                }
+                ';' asignacion ')' '{' codigo                   {
+                                                                    printf("%s repeat\n",$9.cadena);
+                                                                }
+                '}' codigo
              ;
-asignacion:  IDENTIF '=' expresion  { sprintf (temp,"%s %s !\n",$3.cadena, $1.cadena); $$.cadena=genera_cadena(temp) ; }
+
+asignacion:  IDENTIF '=' expresion                                          { 
+                                                                                sprintf (temp,"%s %s !\n",$3.cadena, $1.cadena); 
+                                                                                $$.cadena=genera_cadena(temp) ; 
+                                                                            }
+             | IDENTIF '[' expresion ']' '=' expresion                      {
+                                                                                sprintf(temp, "%s %s swap cells %s + !\n", $3.cadena, $6.cadena, $1.cadena); 
+                                                                                $$.cadena=genera_cadena(temp);
+                                                                            }
+             | IDENTIF '[' expresion ']' '[' expresion ']' '=' expresion    {   
+                                                                                int i = 0;                                                                            
+                                                                                while(strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0){
+                                                                                    i++;
+                                                                                }
+                                                                        
+                                                                                sprintf(temp, "%s %s %s * %s + cells %s + !\n", $9.cadena, $3.cadena, t_simbolos_matrices[i].expresion, $6.cadena, $1.cadena);
+                                                                                $$.cadena=genera_cadena(temp);  
+                                                                            }
              ;
-expresiones: expresion {printf("%s",$1.cadena);} {printf(".\n");}| expresion {printf("%s",$1.cadena);} {printf(". ");}',' expresiones;
+expresiones: /*lambda*/
+            | expresion  {  
+                            printf("%s",$1.cadena);
+                        } 
+                        {
+                            printf(".\n");
+                        }
+            | expresion {
+                            printf("%s",$1.cadena);
+                        } 
+                        {
+                            printf(". ");
+                        }
+            ',' expresiones;
 restoIf:     /* lambda */ 
              | ELSE {printf("else\n");}'{' codigo '}';
 expresion:     termino				{ $$=$1; }
@@ -158,6 +269,7 @@ termino:       operando				{ $$=$1; }
 
 operando:      IDENTIF      		{ sprintf (temp,"%s @ ", $1.cadena) ;$$.cadena=genera_cadena(temp); }
              | IDENTIF '[' expresion ']' { sprintf (temp,"%s cells %s + @ ", $3.cadena, $1.cadena);$$.cadena = genera_cadena(temp) ; }
+             | IDENTIF '[' expresion ']' '[' expresion ']'
              | NUMERO				{sprintf(temp,"%d ",$1.valor);$$.cadena = genera_cadena(temp);}
              | '(' expresion ')'		{ $$=$2; }
              ;
