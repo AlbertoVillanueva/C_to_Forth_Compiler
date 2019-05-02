@@ -7,7 +7,7 @@
 #include <stdlib.h>		   // declaraciones para exit ()
 typedef struct s_atributos { 
 	int valor;
-	char *cadena ; 
+	char *cadena ;
 } t_atributos ; 
 typedef struct simbolo_t {
 	char *nombre;
@@ -15,15 +15,21 @@ typedef struct simbolo_t {
 }simbolo;
 
 simbolo t_simbolos_matrices [50];
+char* var_globales[64];
 int num_matrices = 0;
 int isMatrix; //0 no es una matriz y 1 es una matriz
-char temp [2048] ; 
+char temp [2048] ;
+char funcion [256];
+char argumentos[3][256];
+int num_argumentos;
 char *genera_cadena () ; 
 #define YYSTYPE t_atributos 
 %}
 %token NUMERO		 // Todos los token tienen un tipo para la pila
 %token IDENTIF	   // Identificador=variable
 %token INTEGER	   // identifica la definicion de un entero
+%token VOID
+%token RETURN
 %token STRING
 %token MAIN		  // identifica el comienzo del proc. main
 %token WHILE		 // identifica el bucle main
@@ -52,15 +58,20 @@ char *genera_cadena () ;
 %left POSTFIX
 %%
 										  // Seccion 3 Gramatica - Semantico
-programa:	  def_var principal 		{ ; }
-			 ;
+programa:	{funcion[0] = 0;}
+			def_var principal { ; }
+			;
+			
 
-principal:  MAIN '(' ')' '{' def_var	{ printf (": main \n"); }
-				codigo '}'  			{ printf (";\n"); }
+principal:  MAIN '(' ')' '{' 		{ sprintf(funcion,"%s-",$1.cadena);}
+				def_var				{ printf (": main\n"); }
+				codigo '}'  		{ printf (";\n"); funcion[0] = 0;}
 			;
   
 def_var:	 /* lambda */		{ ; }
-			| INTEGER IDENTIF		{ printf ("variable %s ", $2.cadena); } 
+			| INTEGER IDENTIF		{ printf ("variable ");
+									  printf("%s\n",$2.cadena);
+									} 
 				restoDef_var		{
 									if(isMatrix){
 										if(num_matrices== 50){
@@ -71,15 +82,52 @@ def_var:	 /* lambda */		{ ; }
 										num_matrices++;																								
 									}
 								}
-				';' def_var
+				';'def_var
+			|VOID IDENTIF 							{ sprintf(funcion,"%s-",$2.cadena);}
+				'(' argumentos ')' '{' def_var		{
+													printf (": %s\n",$2.cadena);
+													int i;
+													for(i=0;i<num_argumentos;i++)
+														printf("%s !\n",argumentos[i]);
+													}
+				codigo '}'							{ printf (";\n");funcion[0] = 0;}
+				def_var								
+			|INTEGER IDENTIF 						{ sprintf(funcion,"%s-",$2.cadena);}
+			'(' argumentos ')' '{' def_var			{
+													printf (": %s\n",$2.cadena);
+													int i;
+													for(i=0;i<num_argumentos;i++)
+														printf("%s !\n",argumentos[i]);
+													}
+				codigo RETURN expresion ';' '}'		{ printf ("\n%s\n;\n",$12.cadena); funcion[0] = 0;}
+				def_var
 			;
-restoDef_var: /* lambda */ 		{ printf("\n"); } 
-			| '[' expresion	{ printf("%s",$2.cadena);} 
+argumentos:	/*lambda*/					{num_argumentos = 0;}
+			| INTEGER IDENTIF varios	{
+										num_argumentos++;
+										sprintf(argumentos[num_argumentos-1],"%s",$2.cadena);
+										printf("variable %s\n",argumentos[num_argumentos-1]);
+										}
+			;
+varios:		/*lambda*/
+			|',' INTEGER IDENTIF		{
+										num_argumentos++;
+										if(num_argumentos>3){
+											printf("Error, too many arguments\n");
+											return -1;
+										}
+										sprintf(argumentos[num_argumentos-1],"%s",$3.cadena);
+										printf("variable %s\n",argumentos[num_argumentos-1]);
+										}
+				varios
+			;
+restoDef_var: /* lambda */ 				{ printf("\n"); } 
+			| '[' expresion				{ printf("%s",$2.cadena);} 
 				']'  matrix	  
 			;
-matrix:	  /*lambda*/		 { printf("1 - cells allot\n"); isMatrix=0; }
-			| '[' expresion	{ isMatrix=1; t_simbolos_matrices[num_matrices].expresion=genera_cadena($2.cadena);}
-				']'			  { printf("%s* cells allot\n",$2.cadena); }
+matrix:	  /*lambda*/		 			{ printf("1 - cells allot\n"); isMatrix=0; }
+			| '[' expresion				{ isMatrix=1; t_simbolos_matrices[num_matrices].expresion=genera_cadena($2.cadena);}
+				']'			  			{ printf("%s* cells allot\n",$2.cadena); }
 			;
 codigo:			   /* lambda */ 							{ ; }
 			| asignacion';'									{ printf ("%s \n", $1.cadena); }
@@ -104,6 +152,8 @@ codigo:			   /* lambda */ 							{ ; }
 				expresion									{ printf("%swhile\n",$6.cadena); }
 				';' asignacion ')' '{' codigo				{ printf("%srepeat\n",$9.cadena); }
 				'}' codigo
+			| IDENTIF '(' ')' ';' 							{ printf("%s\n",$1.cadena);}
+				codigo						
 			;
 
 asignacion:  IDENTIF '=' expresion											{ 
@@ -119,7 +169,7 @@ asignacion:  IDENTIF '=' expresion											{
 																				while(strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0){
 																					i++;
 																					if(i==50){
-																						printf("Syntax error, matrix doesnt exist\n");
+																						printf("Error, matrix doesnt exist\n");
 																						return -1;
 																					}
 																				}
@@ -129,12 +179,8 @@ asignacion:  IDENTIF '=' expresion											{
 																			}
 			;
 expresiones: /*lambda*/
-			| expresion {  
-							printf("%s.\n",$1.cadena);
-						}
-			| expresion {
-							printf("%s. ",$1.cadena);
-						} 
+			| expresion { printf("%s.\n",$1.cadena); }
+			| expresion { printf("%s. ",$1.cadena); } 
 				',' expresiones;
 restoIf:	 /* lambda */ 
 			| ELSE {printf("else\n");}'{' codigo '}';
@@ -203,7 +249,7 @@ expresion:	 termino				{ $$=$1; }
 														sprintf(temp,"%sif\n%s\nelse\n%s\nthen\n",$1.cadena,$3.cadena,$5.cadena);
 														$$.cadena = genera_cadena(temp);
 													}
-			 ;
+			;
 
 termino:	operando								{ $$=$1; }
 			| '+' operando %prec SIGNO_UNARIO		{ $$=$2; }
@@ -214,7 +260,7 @@ termino:	operando								{ $$=$1; }
 			 ;
 
 operando:	IDENTIF	  											{ 
-																	sprintf (temp,"%s @ ", $1.cadena);
+																	sprintf (temp,"%s @ ",$1.cadena);
 																	$$.cadena=genera_cadena(temp); 
 																}
 			| IDENTIF '[' expresion ']'							{ 
@@ -226,7 +272,7 @@ operando:	IDENTIF	  											{
 																	while(strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0){
 																		i++;
 																		if(i==50){
-																		printf("Syntax error, matrix doesnt exist\n");
+																		printf("Error, matrix doesnt exist\n");
 																		return -1;
 																	}
 																	}
@@ -238,8 +284,15 @@ operando:	IDENTIF	  											{
 																	$$.cadena = genera_cadena(temp);
 																}
 			| '(' expresion ')'		{ $$=$2; }
+			| IDENTIF '(' funcion_args ')' 									{
+																	sprintf(temp,"%s ",$1.cadena);
+																	$$.cadena = genera_cadena(temp);
+																}
 			;
-
+funcion_args: /*lambda*/
+			| expresion { printf("%s\n",$1.cadena); }
+			| expresion { printf("%s\n",$1.cadena); } 
+				',' expresiones;
 %%
 							// SECCION 4	Codigo en C
 int n_linea = 1 ;
@@ -282,6 +335,8 @@ typedef struct s_pal_reservadas { // para las palabras reservadas de C
 t_reservada pal_reservadas [] = { // define las palabras reservadas y los
 	"main",		MAIN,		   // y los token asociados
 	"int",		 INTEGER,
+	"void",		VOID,
+	"return",	RETURN,
 	"while",	   WHILE,
 	"do",		   DO,
 	"if",		   IF,	  
@@ -345,7 +400,6 @@ int yylex ()
 	char ops_expandibles [] = "!|<=>%+-/*&" ;
 	char cadena [256] ;
 	t_reservada *simbolo ;
-
 	do {
 		c = getchar () ;
 
@@ -409,14 +463,32 @@ int yylex ()
 		 }
 		 cadena [i] = '\0' ;
 		 ungetc (c, stdin) ;
-
-		 yylval.cadena = genera_cadena (cadena) ;
-		 simbolo = busca_pal_reservada (yylval.cadena) ;
+		 simbolo = busca_pal_reservada (cadena) ;
 		 if (simbolo == NULL) {	// no es palabra reservada -> identificador 
 //			   printf ("\nDEV: IDENTIF %s\n", yylval.cadena) ;	// PARA DEPURAR
-			   return (IDENTIF) ;
+				if(funcion[0] == 0){
+					for(i=0 ; i<64 ; i++){
+						if(var_globales[i]==NULL){
+							var_globales[i] = genera_cadena(cadena);
+							yylval.cadena = var_globales[i];
+							return (IDENTIF) ;
+						}
+					}
+					printf("Demasiadas variables globales\n");
+				}else{
+					for(i=0 ; i<64 ; i++){
+						if(var_globales[i] != NULL && strcmp(var_globales[i],cadena)==0){
+							yylval.cadena = var_globales[i];
+							return (IDENTIF) ;
+						}
+					}
+					sprintf(temp,"%s%s",funcion,cadena);
+					yylval.cadena = genera_cadena(temp);
+					return (IDENTIF) ;
+				}
 		 } else {
 //			   printf ("\nDEV: OTRO %s\n", yylval.cadena) ;	   // PARA DEPURAR
+			   yylval.cadena = genera_cadena (cadena) ;
 			   return (simbolo->token) ;
 		 }
 	}
