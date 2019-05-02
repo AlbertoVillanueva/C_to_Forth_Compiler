@@ -259,18 +259,34 @@ expresion:     termino				{ $$=$1; }
                                                      }
              ;
 
-termino:       operando				{ $$=$1; }
-             | '+' operando %prec SIGNO_UNARIO	{ $$=$2; }
-             | '-' operando %prec SIGNO_UNARIO	{ sprintf (temp,"%s negate ",$2.cadena);$$.cadena=genera_cadena(temp); }
-             | '!' operando %prec SIGNO_UNARIO  { sprintf (temp,"%s 0= ",$2.cadena);$$.cadena=genera_cadena(temp); }
-             | operando ADDER %prec POSTFIX  { sprintf (temp,"%s 1+ ",$2.cadena);$$.cadena=genera_cadena(temp); }
-             | operando SUBSTRACTER %prec POSTFIX  { sprintf (temp,"%s 1- ",$2.cadena);$$.cadena=genera_cadena(temp); }
+termino:       operando				                { $$=$1; }
+             | '+' operando %prec SIGNO_UNARIO	    { $$=$2; }
+             | '-' operando %prec SIGNO_UNARIO	    { sprintf (temp,"%s negate ",$2.cadena);$$.cadena=genera_cadena(temp); }
+             | '!' operando %prec SIGNO_UNARIO      { sprintf (temp,"%s 0= ",$2.cadena);$$.cadena=genera_cadena(temp); }
+             | operando ADDER %prec POSTFIX         { sprintf (temp,"%s 1+ ",$2.cadena);$$.cadena=genera_cadena(temp); }
+             | operando SUBSTRACTER %prec POSTFIX   { sprintf (temp,"%s 1- ",$2.cadena);$$.cadena=genera_cadena(temp); }
              ;
 
-operando:      IDENTIF      		{ sprintf (temp,"%s @ ", $1.cadena) ;$$.cadena=genera_cadena(temp); }
-             | IDENTIF '[' expresion ']' { sprintf (temp,"%s cells %s + @ ", $3.cadena, $1.cadena);$$.cadena = genera_cadena(temp) ; }
-             | IDENTIF '[' expresion ']' '[' expresion ']'
-             | NUMERO				{sprintf(temp,"%d ",$1.valor);$$.cadena = genera_cadena(temp);}
+operando:      IDENTIF      		                            { 
+                                                                    sprintf (temp,"%s @ ", $1.cadena);
+                                                                    $$.cadena=genera_cadena(temp); 
+                                                                }
+             | IDENTIF '[' expresion ']'                        { 
+                                                                    sprintf (temp,"%s cells %s + @ ", $3.cadena, $1.cadena);
+                                                                    $$.cadena = genera_cadena(temp) ; 
+                                                                }
+            | IDENTIF '[' expresion ']' '[' expresion ']'       {
+                                                                    int i = 0;
+                                                                    while(strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0){
+                                                                        i++;
+                                                                    }
+                                                                    sprintf(temp, "%s %s * %s + cells %s +", $3.cadena, t_simbolos_matrices[i].expresion, $6.cadena,$1.cadena);
+                                                                    $$.cadena=genera_cadena(temp);
+                                                                }
+             | NUMERO				                            {
+                                                                    sprintf(temp,"%d ",$1.valor);
+                                                                    $$.cadena = genera_cadena(temp);
+                                                                }
              | '(' expresion ')'		{ $$=$2; }
              ;
 
