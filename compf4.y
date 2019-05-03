@@ -16,12 +16,16 @@ typedef struct simbolo_t {
 
 simbolo t_simbolos_matrices [50];
 char* var_globales[64];
+int overlap[64];
+char* var_locales[64];
 int num_matrices = 0;
 int isMatrix; //0 no es una matriz y 1 es una matriz
 char temp [2048] ;
 char funcion [256];
 char argumentos[3][256];
 int num_argumentos;
+int declarando;
+int i;
 char *genera_cadena () ; 
 #define YYSTYPE t_atributos 
 %}
@@ -58,54 +62,101 @@ char *genera_cadena () ;
 %left POSTFIX
 %%
 										  // Seccion 3 Gramatica - Semantico
-programa:	{funcion[0] = 0;}
+programa:	{funcion[0] = 0;for(i=0;i<64;i++)overlap[i]=0;}
 			def_var principal { ; }
 			;
 			
 
 principal:  MAIN '(' ')' '{' 		{ sprintf(funcion,"%s-",$1.cadena);}
 				def_var				{ printf (": main\n"); }
-				codigo '}'  		{ printf (";\n"); funcion[0] = 0;}
+				codigo '}'  		{
+									printf (";\n");
+									funcion[0] = 0;
+									for(i=0;i<64;i++){
+										overlap[i]=0;
+										if(var_locales[i]!=NULL){
+											free(var_locales[i]);
+											var_locales[i] = NULL;
+										}
+									}
+									}
 			;
   
 def_var:	 /* lambda */		{ ; }
-			| INTEGER IDENTIF		{ printf ("variable ");
-									  printf("%s\n",$2.cadena);
-									} 
-				restoDef_var		{
-									if(isMatrix){
-										if(num_matrices== 50){
-											printf("Creado mas matrices del limite permitido\n");
-											return -1;
-										}
-										t_simbolos_matrices[num_matrices].nombre=genera_cadena($2.cadena);
-										num_matrices++;																								
-									}
-								}
-				';'def_var
-			|VOID IDENTIF 							{ sprintf(funcion,"%s-",$2.cadena);}
+			| INTEGER {declarando = 1;} restoVariable_funcion
+			|VOID IDENTIF 							{
+													if(funcion[0] != 0){
+														printf("No se permite funciones dentro de funciones\n");
+														exit(-1);
+													}
+													sprintf(funcion,"%s-",$2.cadena);
+													}
 				'(' argumentos ')' '{' def_var		{
 													printf (": %s\n",$2.cadena);
-													int i;
 													for(i=0;i<num_argumentos;i++)
 														printf("%s !\n",argumentos[i]);
 													}
-				codigo '}'							{ printf (";\n");funcion[0] = 0;}
-				def_var								
-			|INTEGER IDENTIF 						{ sprintf(funcion,"%s-",$2.cadena);}
-			'(' argumentos ')' '{' def_var			{
-													printf (": %s\n",$2.cadena);
-													int i;
+				codigo '}'							{
+													printf (";\n");
+													funcion[0] = 0;
+													for(i=0;i<64;i++){
+														overlap[i]=0;
+														if(var_locales[i]!=NULL){
+															free(var_locales[i]);
+															var_locales[i] = NULL;
+														}
+													}
+													num_argumentos = 0;
+													}
+				def_var
+			;
+restoVariable_funcion:	IDENTIF				{
+											printf ("variable ");
+											printf("%s\n",$1.cadena);
+											declarando = 0;
+											} 
+							restoDef_var		{
+											if(isMatrix){
+												if(num_matrices== 50){
+													printf("Creado mas matrices del limite permitido\n");
+													return -1;
+												}
+												t_simbolos_matrices[num_matrices].nombre=genera_cadena($1.cadena);
+												num_matrices++;																								
+											}
+											}
+							';'def_var
+				|IDENTIF '('				{
+											if(funcion[0] != 0){
+												printf("No se permite funciones dentro de funciones\n");
+												exit(-1);
+											}
+											sprintf(funcion,"%s-",$1.cadena);declarando = 0;
+											}
+					 argumentos ')' '{' def_var			{
+													printf (": %s\n",$1.cadena);
 													for(i=0;i<num_argumentos;i++)
 														printf("%s !\n",argumentos[i]);
 													}
-				codigo RETURN expresion ';' '}'		{ printf ("\n%s\n;\n",$12.cadena); funcion[0] = 0;}
+				codigo RETURN expresion ';' '}'		{
+													printf ("\n%s\n;\n",$11.cadena);
+													funcion[0] = 0;
+													for(i=0;i<64;i++){
+														overlap[i]=0;
+														if(var_locales[i]!=NULL){
+															free(var_locales[i]);
+															var_locales[i] = NULL;
+														}
+													}
+													num_argumentos = 0;
+													}
 				def_var
 			;
 argumentos:	/*lambda*/					{num_argumentos = 0;}
-			| INTEGER IDENTIF varios	{
+			| INTEGER					{declarando = 1;}
+				IDENTIF varios			{
 										num_argumentos++;
-										sprintf(argumentos[num_argumentos-1],"%s",$2.cadena);
+										sprintf(argumentos[num_argumentos-1],"%s",$3.cadena);
 										printf("variable %s\n",argumentos[num_argumentos-1]);
 										}
 			;
@@ -119,7 +170,7 @@ varios:		/*lambda*/
 										sprintf(argumentos[num_argumentos-1],"%s",$3.cadena);
 										printf("variable %s\n",argumentos[num_argumentos-1]);
 										}
-				varios
+				varios					{declarando = 0;}
 			;
 restoDef_var: /* lambda */ 				{ printf("\n"); } 
 			| '[' expresion				{ printf("%s",$2.cadena);} 
@@ -148,12 +199,35 @@ codigo:			   /* lambda */ 							{ ; }
 			| PUTS '(' STRING ')' ';'						{ printf(".\" %s\"\n" ,$3.cadena); }
 				codigo
 			| PRINTF '(' STRING ',' expresiones ')' ';' codigo
-			| FOR '(' asignacion ';'						{ printf("%sbegin",$3.cadena); }
+			| FOR '(' asignacion ';'						{ printf("%sbegin ",$3.cadena); }
 				expresion									{ printf("%swhile\n",$6.cadena); }
 				';' asignacion ')' '{' codigo				{ printf("%srepeat\n",$9.cadena); }
 				'}' codigo
-			| IDENTIF '(' ')' ';' 							{ printf("%s\n",$1.cadena);}
-				codigo						
+			| IDENTIF '(' funcion_args ')' ';' 				{
+																strcpy(temp,$1.cadena);
+																strcat(temp,"-");
+																//printf("comparo %s con %s\n",temp,funcion);
+																if(strcmp(funcion,temp)==0){
+																	printf("%s\n",$3.cadena);
+																	for(i=0 ; i<64; i++){
+																		if(var_locales[i] != NULL){
+																			printf("%s @ >r\n",var_locales[i]);
+																		}
+																	}
+																	printf("recurse\n");
+																	for(i=63 ; i>=0; i--){
+																		if(var_locales[i] != NULL){
+																			printf("r> %s !\n",var_locales[i]);
+																		}
+																	}
+																}else{
+																	printf("%s\n%s ",$3.cadena,$1.cadena);
+																}
+																
+																
+																$$.cadena = genera_cadena(temp);
+															}
+				codigo											
 			;
 
 asignacion:  IDENTIF '=' expresion											{ 
@@ -161,11 +235,11 @@ asignacion:  IDENTIF '=' expresion											{
 																				$$.cadena=genera_cadena(temp) ; 
 																			}
 			| IDENTIF '[' expresion ']' '=' expresion						{
-																				sprintf(temp, "%s%s swap cells %s+ !\n", $3.cadena, $6.cadena, $1.cadena); 
+																				sprintf(temp, "%s%s swap cells %s + !\n", $3.cadena, $6.cadena, $1.cadena); 
 																				$$.cadena=genera_cadena(temp);
 																			}
 			| IDENTIF '[' expresion ']' '[' expresion ']' '=' expresion		{   
-																				int i = 0;																			
+																				i = 0;																			
 																				while(strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0){
 																					i++;
 																					if(i==50){
@@ -184,7 +258,7 @@ expresiones: /*lambda*/
 				',' expresiones;
 restoIf:	 /* lambda */ 
 			| ELSE {printf("else\n");}'{' codigo '}';
-expresion:	 termino				{ $$=$1; }
+expresion:	 termino							{ $$=$1; }
 			| expresion  '+' expresion			{
 													sprintf(temp,"%s%s+ ",$1.cadena,$3.cadena);
 													$$.cadena = genera_cadena(temp);
@@ -268,7 +342,7 @@ operando:	IDENTIF	  											{
 																	$$.cadena = genera_cadena(temp) ; 
 																}
 			| IDENTIF '[' expresion ']' '[' expresion ']'		{
-																	int i = 0;
+																	i = 0;
 																	while(strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0){
 																		i++;
 																		if(i==50){
@@ -284,15 +358,44 @@ operando:	IDENTIF	  											{
 																	$$.cadena = genera_cadena(temp);
 																}
 			| '(' expresion ')'		{ $$=$2; }
-			| IDENTIF '(' funcion_args ')' 									{
-																	sprintf(temp,"%s ",$1.cadena);
+			| IDENTIF '(' funcion_args ')' 						{
+																	strcpy(temp,$1.cadena);
+																	strcat(temp,"-");
+																	//printf("comparo %s con %s\n",temp,funcion);
+																	if(strcmp(funcion,temp)==0){
+																		sprintf(temp,"%s\n",$3.cadena);
+																		for(i=0 ; i<64; i++){
+																			if(var_locales[i] != NULL){
+																				strcat(temp,var_locales[i]);
+																				strcat(temp," @ >r\n");
+																			}
+																		}
+																		strcat(temp,"recurse\n");
+																		for(i=63 ; i>=0; i--){
+																			if(var_locales[i] != NULL){
+																				strcat(temp,"r> ");
+																				strcat(temp,var_locales[i]);
+																				strcat(temp," !\n");
+																			}
+																		}
+																	}else{
+																		sprintf(temp,"%s\n%s ",$3.cadena,$1.cadena);
+																	}
+																	
+																	
 																	$$.cadena = genera_cadena(temp);
 																}
 			;
 funcion_args: /*lambda*/
-			| expresion { printf("%s\n",$1.cadena); }
-			| expresion { printf("%s\n",$1.cadena); } 
-				',' expresiones;
+			| expresion {
+						sprintf(temp,"%s\n",$1.cadena);
+						$$.cadena = genera_cadena(temp);
+						}
+			| expresion ',' funcion_args{
+										sprintf(temp,"%s\n%s",$1.cadena,$3.cadena);
+										$$.cadena = genera_cadena(temp);
+										}
+			;
 %%
 							// SECCION 4	Codigo en C
 int n_linea = 1 ;
@@ -358,7 +461,6 @@ t_reservada pal_reservadas [] = { // define las palabras reservadas y los
 t_reservada *busca_pal_reservada (char *nombre_simbolo)
 {								  // Busca n_s en la tabla de pal. res.
 								   // y devuelve puntero a registro (simbolo)
-	int i ;
 	t_reservada *sim ;
 
 	i = 0 ;
@@ -394,7 +496,6 @@ char *genera_cadena (char *nombre)	 // copia el argumento a un
 
 int yylex ()
 {
-	int i ;
 	unsigned char c ;
 	unsigned char cc ;
 	char ops_expandibles [] = "!|<=>%+-/*&" ;
@@ -476,15 +577,37 @@ int yylex ()
 					}
 					printf("Demasiadas variables globales\n");
 				}else{
+					if(!declarando){
+						for(i=0 ; i<64 ; i++){
+							if(!overlap[i] && var_globales[i] != NULL && strcmp(var_globales[i],cadena)==0){
+								yylval.cadena = var_globales[i];
+								return (IDENTIF) ;
+							}
+						}
+					}
 					for(i=0 ; i<64 ; i++){
 						if(var_globales[i] != NULL && strcmp(var_globales[i],cadena)==0){
-							yylval.cadena = var_globales[i];
-							return (IDENTIF) ;
+							overlap[i] = 1;
+							break;
 						}
 					}
 					sprintf(temp,"%s%s",funcion,cadena);
-					yylval.cadena = genera_cadena(temp);
-					return (IDENTIF) ;
+					if(!declarando){
+						for(i=0 ; i<64 ; i++){
+							if(var_locales[i] != NULL && strcmp(var_locales[i],temp)==0){
+								yylval.cadena = var_locales[i];
+								return (IDENTIF) ;
+							}
+						}
+					}
+					for(i=0 ; i<64 ; i++){
+						if(var_locales[i] == NULL){
+							var_locales[i] = genera_cadena(temp);
+							yylval.cadena = var_locales[i];
+							return (IDENTIF) ;
+						}
+					}
+					printf("Demasiadas variables locales");
 				}
 		 } else {
 //			   printf ("\nDEV: OTRO %s\n", yylval.cadena) ;	   // PARA DEPURAR
