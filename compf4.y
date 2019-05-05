@@ -5,20 +5,16 @@
 #include <stdio.h>
 #include <string.h>		   // declaraciones para cadenas
 #include <stdlib.h>		   // declaraciones para exit ()
+#inlcude "stack.h"
 void salirFuncion();
+
 typedef struct s_atributos { 
 	int valor;
 	char *cadena ;
-} t_atributos ; 
-typedef struct simbolo_t {
-	char *nombre;
-	char *expresion;
-}simbolo;
-typedef struct globales_t{
-	char* nombre;
-	char overlap;//boolean
-}globales;
+} t_atributos ;
+
 simbolo t_simbolos_matrices [50];
+Stack t_simbolos_matrices = newStack();
 globales var_globales[64];
 char* var_locales[64];
 int num_matrices = 0;
@@ -65,10 +61,7 @@ char *genera_cadena () ;
 %left POSTFIX
 %%
 										  // Seccion 3 Gramatica - Semantico
-programa:
-						{salirFuncion();}
-	def_var principal	{ ; }
-;
+programa:{salirFuncion();}def_var principal;
 
 principal:
 	MAIN '(' ')' '{' 		{ sprintf(funcion,"%s-",$1.cadena);}
@@ -104,12 +97,9 @@ restoVariable_funcion:
 										} 
 		restoDef_var ';'					{
 											if(isMatrix){
-												if(num_matrices== 50){
-													printf("Creado mas matrices del limite permitido\n");
-													return -1;
-												}
-												t_simbolos_matrices[num_matrices].nombre=genera_cadena($1.cadena);
-												num_matrices++;																								
+												simbolo matriz = *(simbolo*)pop(&t_simbolos_matrices);
+												matriz.nombre = genera_cadena($1.cadena);
+												push(&t_simbolos_matrices,&matriz,sizeof(simbolo));																						
 											}
 										}
 	|IDENTIF '('						{
@@ -160,11 +150,15 @@ matrix:
 	/*lambda*/		 	{ printf("1 - cells allot\n"); isMatrix=0; }
 	| '[' expresion	']'	{
 							isMatrix=1;
-							t_simbolos_matrices[num_matrices].expresion=genera_cadena($2.cadena);
+							simbolo matriz;
+							matriz.expresion = genera_cadena($2.cadena);
+							push(&t_simbolos_matrices,&matriz,sizeof(simbolo));
 					  		printf("%s* cells allot\n",$2.cadena);
 						}
 ;
-codigo: sentencia codigo;
+codigo:
+	sentencia codigo
+;
 sentencia:
 	/* lambda */ 									{ ; }
 	| asignacion';'									{ printf ("%s \n", $1.cadena); } 
@@ -178,11 +172,10 @@ sentencia:
 	| PUTS '(' STRING ')' ';'						{ printf(".\" %s\"\n" ,$3.cadena); }
 	| PRINTF '(' STRING ',' expresiones ')' ';'
 	| FOR '(' asignacion ';' expresion ';'			{ printf("%sbegin %swhile\n",$3.cadena,$5.cadena); }
-		 asignacion ')' '{' codigo '}'				{ printf("%srepeat\n",$8.cadena); }
+		asignacion ')' '{' codigo '}'				{ printf("%srepeat\n",$8.cadena); }
 	| IDENTIF '(' funcion_args ')' ';' 				{
 														strcpy(temp,$1.cadena);
 														strcat(temp,"-");
-														//printf("comparo %s con %s\n",temp,funcion);
 														if(strcmp(funcion,temp)==0){
 															printf("%s\n",$3.cadena);
 															for(i=0 ; i<64; i++){
@@ -207,13 +200,8 @@ asignacion:
 	IDENTIF '=' expresion											{ sprintf(temp,"%s%s !\n",$3.cadena, $1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']' '=' expresion						{ sprintf(temp, "%s%s swap cells %s + !\n", $3.cadena, $6.cadena, $1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']' '[' expresion ']' '=' expresion		{   
-																		for(i=0;strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0;1++){
-																			if(i==50){
-																				printf("Error, matrix doesnt exist\n");
-																				return -1;
-																			}
-																		}
-																		sprintf(temp, "%s%s%s* %s+ cells %s + !\n", $9.cadena, $3.cadena, t_simbolos_matrices[i].expresion, $6.cadena, $1.cadena);
+																		simbolo* matriz = getMatrix(t_simbolos_matrices,$1.cadena);
+																		sprintf(temp, "%s%s%s* %s+ cells %s + !\n", $9.cadena, $3.cadena, matriz->expresion, $6.cadena, $1.cadena);
 																		$$.cadena=genera_cadena(temp);  
 																	}
 ;
@@ -261,13 +249,8 @@ operando:
 	IDENTIF	  											{ sprintf (temp,"%s @ ",$1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']'							{ sprintf (temp,"%s cells %s + @ ", $3.cadena, $1.cadena); $$.cadena = genera_cadena(temp) ; }
 	| IDENTIF '[' expresion ']' '[' expresion ']'		{
-															for(i=0 ; strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0 ; i++){
-																if(i==50){
-																	printf("Error, matrix doesnt exist\n");
-																	return -1;
-																}
-															}
-															sprintf(temp, "%s%s* %s+ cells %s + @ ", $3.cadena, t_simbolos_matrices[i].expresion, $6.cadena,$1.cadena);
+															simbolo* matriz = getMatrix(t_simbolos_matrices,$1.cadena);
+															sprintf(temp, "%s%s* %s+ cells %s + @ ", $3.cadena, matriz->expresion, $6.cadena,$1.cadena);
 															$$.cadena=genera_cadena(temp);
 														}
 	| NUMERO											{ sprintf(temp,"%d ",$1.valor); $$.cadena = genera_cadena(temp); }
