@@ -1,0 +1,167 @@
+\documentclass[11pt,spanish]{article}
+
+	\usepackage[utf8]{inputenc} % Required for inputting international characters
+	\usepackage[T1]{fontenc}
+	\usepackage{mathpazo} % Palatino font
+	\usepackage{amsmath}
+	\usepackage{selinput}
+	\SelectInputMappings{%
+		aacute={á},
+		ntilde={ñ},
+		Euro={€}
+	}
+	\usepackage[english]{babel}
+	\usepackage{hyperref}
+	\usepackage{caption}
+	\usepackage{graphicx}
+	\usepackage{subcaption}
+	\usepackage{float}
+	\usepackage[margin=2.5cm]{geometry}
+	\usepackage[table]{xcolor}
+	
+	\hypersetup{
+		colorlinks,
+		citecolor=black,
+		filecolor=black,
+		linkcolor=black,
+		urlcolor=blue
+	}
+	
+	\begin{document}
+	%------------------------------------------------------------------------------------------
+	
+		%---------------------------%
+		%	Stop Numbering Pages	%
+		%---------------------------%
+	
+		\pagenumbering{gobble}
+	
+	%------------------------------------------------------------------------------------------
+		\begin{titlepage} % Suppresses displaying the page number on the title page and the subsequent page counts as page 1
+		
+		\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for horizontal lines, change thickness here
+		
+		\center % Centre everything on the page
+		
+		%---------------%
+		%	Encabezados	%
+		%---------------%
+		
+		\textsc{\LARGE Universidad Carlos III de Madrid}\\[1.5cm] % Main heading such as the name of your university/college
+		
+		\textsc{\Large Grado en Ingeniería Informática}\\[0.5cm] % Major heading such as course name
+		
+		\textsc{\large Procesadores del Lenguaje}\\[0.5cm] % Minor heading such as course title
+		
+		%-----------%
+		%	Titulo	%
+		%-----------%
+		
+		\HRule\\[0.4cm]
+		
+		{\huge\bfseries Traductor de C a Forth}\\[0.4cm] % Title of your document
+		
+		\HRule\\[1.5cm]
+		
+		%---------------%
+		%	Author(s)	%
+		%---------------%
+		
+		\begin{minipage}{0.7\textwidth}
+			\begin{flushleft}
+				\large
+				\textit{Autores}\\
+				\textsc{Alberto Villanueva Nieto\ \ \ \ 100374691}\\
+				\textsc{Cristian Cabrera Pinto\ \ \ \ \ \ \ \ \ \ 100363778}
+			\end{flushleft}
+		\end{minipage}
+	
+		%-----------%
+		%	Date	%
+		%-----------%
+		
+		\vfill\vfill\vfill % Position the date 3/4 down the remaining page
+		
+		{\large\today} % Date, change the \today to a set date if you want to be precise
+		
+		\vfill % Push the date up 1/4 of the remaining page
+		
+		\end{titlepage}
+	\newpage
+	%------------------------------------------------------------------------------------------	
+		\tableofcontents
+		\newpage
+	%------------------------------------------------------------------------------------------
+	
+		%---------------------------%
+		%	Start Numbering Pages	%
+		%---------------------------%
+	
+		\pagenumbering{arabic}
+	
+	%------------------------------------------------------------------------------------------
+	\section{Introduccion}
+	\section{Apartados Implementados}
+		\subsection*{4. Variables Locales}
+        Para definir las variables locales de la función main, hemos decidio poner la semantica de imprimir el nombre de la funcion despues de la parte de la definicion de variables y en la semantica de definicion de variables se imprimen.  
+        \begin{tabbing}
+            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+            principal:\\
+            \> MAIN '(' ')' '\{' def\_var \>\> \{ printf (": main \textbackslash n"); \}\\
+            \> \> codigo '\}'\>   \{ printf (";\textbackslash n"); \}\\
+            ;
+        \end{tabbing}
+        \begin{tabbing}
+            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+            def\_var:\\
+            \> /* lambda */\>\>		\{ ; \}\\
+            \> | INTEGER IDENTIF ';'\>\> \{ printf("variable \%s \textbackslash n", \$2);\}		\\
+            \> \> def\_var\\
+            ;
+		\end{tabbing}
+        \subsection*{5. do-while}
+        Para definir el bucle do-while se ha creado una producción en sentencia la cual escribe begin cuando lee el do, a continuación el no terminal codigo escribe el codigo, despues el no terminal expresion escribe la condicion del bucle y por ultimo se escribe while repeat.
+        \begin{tabbing}
+        \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
+        \>|DO\>\>											\{ printf("begin\textbackslash n"); \}\\
+        \>'\{' codigo '\}' WHILE '(' expresion ')' ';'\> \> \{ printf("while repeat \textbackslash n"); \}\\
+        \end{tabbing}
+        \subsection*{6. Operadores logicos}
+        Para los operadores de mas de un caracter se han añadido tokens y se han establecido las precedencias necesarias. Para cada operador binario se ha añadidio una producción a expresión de la forma: expresion operador expresion, y para la impresión se deja que los no terminales expresion impriman las expresiones y luego se imprime el operador correspondiente.
+        \begin{tabbing}
+            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
+            \>| expresion  EQUAL expresion\> \>	    \{ printf  ("= ") ; \}\\
+            \>| expresion  UNEQUAL expresion\> \>	    \{ printf  ("= 0= ") ; \}\\
+            \>| expresion  LESSOREQ expresion\> \>	\{ printf  ("<= ") ; \}\\
+            \>| expresion  '<' expresion\> \>		    \{ printf  ("< ") ; \}\\
+            \>| expresion  '>' expresion\> \>	        \{ printf  ("> ") ; \}\\
+            \>| expresion  '\&' expresion\> \>		    \{ printf  ("and ") ; \}\\
+            \>| expresion  '|' expresion\> \>		    \{ printf  ("or ") ; \}\\
+            \>| expresion  AND expresion\> \>	        \{ printf  ("and ") ; \}\\
+            \>| expresion  OR expresion\> \>	        \{ printf  ("or ") ; \}\\
+            \>| expresion  '\%' expresion\> \>		    \{ printf  ("mod ") ; \}
+        \end{tabbing}
+        Para las operaciones unarias, se ha añadido una producción en termino en donde se ha dejado que el no terminal operando imprima el operando y luego se imprime el operador unario correspondiente.
+        \begin{tabbing}
+            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
+            \>| '!' operando \%prec SIGNO\_UNARIO\> \>  \{ printf ("0= ") ; \}\\
+            \>| operando ADDER \%prec POSTFIX\> \>  \{ printf ("1+ ") ; \}\\
+            \>| operando SUBSTRACTER \%prec POSTFIX\> \> \{ printf ("1- ") ; \}
+        \end{tabbing}
+        \subsection*{7. If}
+        Para añadir la estructura de control if se ha añadido una profucción en sentencia en donde se deja que se imprima la condición mediante el no terminal expresion y despues se imprime if. Luego se deja que se imprima el código y el resto del if, que puede ser o nada o un else, y finalmente se imprime el then para indicar la finalización del código.
+        \begin{tabbing}
+            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
+            \>| IF '(' expresion ')'\>\> \{printf("if\textbackslash n");\}\\
+            \>\>'\{' codigo '\}' restoIf\> \{printf("then\textbackslash n");\}\\
+        \end{tabbing}
+        \begin{tabbing}
+            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
+            restoIf:\\
+            \>/* lambda */ \\
+            \>| ELSE\>\> \{printf("else\textbackslash n");\}\\
+            \>'\{' codigo '\}'\\
+            ;
+        \end{tabbing}
+	\section{Conclusion}
+	\end{document}
