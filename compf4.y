@@ -67,10 +67,11 @@ char *genera_cadena () ;
 										  // Seccion 3 Gramatica - Semantico
 programa:
 						{salirFuncion();}
-	def_var principal	{ ; }
+	def_var
+	 principal	{ ; }
 ;
 
-principal:
+principal:  
 	MAIN '(' ')' '{' 		{ sprintf(funcion,"%s-",$1.cadena);}
 		def_var				{ printf (": main\n"); }
 		codigo '}'  		{ printf (";\n"); salirFuncion(); }
@@ -78,6 +79,7 @@ principal:
   
 def_var:
 	/* lambda */		{ ; }
+
 	| INTEGER 								{ declarando = 1; }
 		restoVariable_funcion def_var
 	|VOID IDENTIF 							{
@@ -96,6 +98,7 @@ def_var:
 												salirFuncion();
 											}
 		def_var
+
 ;
 restoVariable_funcion:
 	IDENTIF								{
@@ -150,7 +153,7 @@ varios:
 								printf("variable %s\n",argumentos[num_argumentos-1]);
 							}
 			varios			{ declarando = 0; }
-			;
+;
 restoDef_var:
 	/* lambda */ 		{ printf("\n"); } 
 	|'[' expresion ']'	{ printf("%s",$2.cadena);} 
@@ -164,10 +167,10 @@ matrix:
 					  		printf("%s* cells allot\n",$2.cadena);
 						}
 ;
-codigo: sentencia codigo;
+codigo: sentencia | sentencia codigo
+;
 sentencia:
-	/* lambda */ 									{ ; }
-	| asignacion';'									{ printf ("%s \n", $1.cadena); } 
+	asignacion';'									{ printf ("%s \n", $1.cadena); } 
 	| WHILE 										{ printf ("begin "); }
 		'(' expresion ')'							{ printf("%swhile\n",$4.cadena); }
 		'{' codigo '}'   							{ printf ("repeat\n") ; } 
