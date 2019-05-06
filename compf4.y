@@ -76,7 +76,7 @@ programa:
 ;
 
 principal:  
-	MAIN '(' ')' '{' 		{ sprintf(funcion,"%s-",$1.cadena);}
+	MAIN '(' ')' '{' 		{ sprintf(funcion,"%s_",$1.cadena);}
 		def_var				{ printf (": main\n"); }
 		codigo '}'  		{ printf (";\n"); salirFuncion(); }
 ;
@@ -91,7 +91,7 @@ def_var:
 													perror("No se permite funciones dentro de funciones\n");
 													exit(-1);
 												}
-												sprintf(funcion,"%s-",$2.cadena);
+												sprintf(funcion,"%s_",$2.cadena);
 											}
 		'(' argumentos ')' '{' def_var		{
 												printf (": %s\n",$2.cadena);
@@ -115,7 +115,7 @@ restoVariable_funcion:
 												perror("No se permite funciones dentro de funciones\n");
 												exit(-1);
 											}
-											sprintf(funcion,"%s-",$1.cadena);
+											sprintf(funcion,"%s_",$1.cadena);
 											declarando = 0;
 										}
 		argumentos ')' '{' def_var		{
@@ -169,7 +169,7 @@ sentencia:
 		 asignacion ')' '{' codigo '}'				{ printf("%srepeat\n",$8.cadena); }
 	| IDENTIF '(' funcion_args ')' ';' 				{
 														strcpy(temp,$1.cadena);
-														strcat(temp,"-");
+														strcat(temp,"_");
 														if(strcmp(funcion,temp)==0){
 															printf("%s\n",$3.cadena);
 															for(i=0 ; i<64; i++){
@@ -250,7 +250,7 @@ operando:
 	| '(' expresion ')'									{ $$=$2; }
 	| IDENTIF '(' funcion_args ')' 						{
 															strcpy(temp,$1.cadena);
-															strcat(temp,"-");
+															strcat(temp,"_");
 															//printf("comparo %s con %s\n",temp,funcion);
 															if(strcmp(funcion,temp)==0){
 																sprintf(temp,"%s\n",$3.cadena);
