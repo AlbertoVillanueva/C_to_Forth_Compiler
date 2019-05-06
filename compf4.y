@@ -167,7 +167,9 @@ matrix:
 					  		printf("%s* cells allot\n",$2.cadena);
 						}
 ;
-codigo: sentencia | sentencia codigo
+codigo:
+	sentencia
+	|sentencia codigo
 ;
 sentencia:
 	asignacion';'									{ printf ("%s \n", $1.cadena); } 
