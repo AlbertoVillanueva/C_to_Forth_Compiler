@@ -212,7 +212,7 @@ asignacion:
 	IDENTIF '=' expresion											{ sprintf(temp,"%s%s !\n",$3.cadena, $1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']' '=' expresion						{ sprintf(temp, "%s%s swap cells %s + !\n", $3.cadena, $6.cadena, $1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']' '[' expresion ']' '=' expresion		{   
-																		for(i=0;strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0;1++){
+																		for(i=0;strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0;i++){
 																			if(i==50){
 																				printf("Error, matrix doesnt exist\n");
 																				return -1;
