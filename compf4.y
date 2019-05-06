@@ -6,6 +6,10 @@
 #include <string.h>		   // declaraciones para cadenas
 #include <stdlib.h>		   // declaraciones para exit ()
 void salirFuncion();
+void printArgumentos();
+void crearMatriz(char* nombre);
+int findMatriz(char* nombre);
+void addArgument(char* arg);
 typedef struct s_atributos { 
 	int valor;
 	char *cadena ;
@@ -84,14 +88,14 @@ def_var:
 		restoVariable_funcion def_var
 	|VOID IDENTIF 							{
 												if(funcion[0] != 0){
-													printf("No se permite funciones dentro de funciones\n");
+													perror("No se permite funciones dentro de funciones\n");
 													exit(-1);
 												}
 												sprintf(funcion,"%s-",$2.cadena);
 											}
 		'(' argumentos ')' '{' def_var		{
 												printf (": %s\n",$2.cadena);
-												for(i=0;i<num_argumentos;i++)printf("%s !\n",argumentos[i]);
+												printArgumentos();
 											}
 		codigo '}'							{
 												printf (";\n");
@@ -105,19 +109,10 @@ restoVariable_funcion:
 											printf ("variable %s\n",$1.cadena);
 											declarando = 0;
 										} 
-		restoDef_var ';'					{
-											if(isMatrix){
-												if(num_matrices== 50){
-													printf("Creado mas matrices del limite permitido\n");
-													return -1;
-												}
-												t_simbolos_matrices[num_matrices].nombre=genera_cadena($1.cadena);
-												num_matrices++;																								
-											}
-										}
+		restoDef_var ';'				{ if(isMatrix)crearMatriz($1.cadena); }
 	|IDENTIF '('						{
 											if(funcion[0] != 0){
-												printf("No se permite funciones dentro de funciones\n");
+												perror("No se permite funciones dentro de funciones\n");
 												exit(-1);
 											}
 											sprintf(funcion,"%s-",$1.cadena);
@@ -125,7 +120,7 @@ restoVariable_funcion:
 										}
 		argumentos ')' '{' def_var		{
 											printf (": %s\n",$1.cadena);
-											for(i=0;i<num_argumentos;i++)printf("%s !\n",argumentos[i]);
+											printArgumentos();
 										}
 		codigo RETURN expresion ';' '}'	{
 											printf ("\n%s\n;\n",$11.cadena);
@@ -135,23 +130,11 @@ restoVariable_funcion:
 argumentos:
 	/*lambda*/			{num_argumentos = 0;}
 	| INTEGER			{declarando = 1;}
-		IDENTIF varios	{
-							num_argumentos++;
-							sprintf(argumentos[num_argumentos-1],"%s",$3.cadena);
-							printf("variable %s\n",argumentos[num_argumentos-1]);
-						}
+		IDENTIF varios	{ addArgument($3.cadena); }
 ;
 varios:	
 	/*lambda*/
-	|',' INTEGER IDENTIF	{
-								num_argumentos++;
-								if(num_argumentos>3){
-									printf("Error, too many arguments\n");
-									return -1;
-								}
-								sprintf(argumentos[num_argumentos-1],"%s",$3.cadena);
-								printf("variable %s\n",argumentos[num_argumentos-1]);
-							}
+	|',' INTEGER IDENTIF	{ addArgument($3.cadena); }
 			varios			{ declarando = 0; }
 ;
 restoDef_var:
@@ -187,7 +170,6 @@ sentencia:
 	| IDENTIF '(' funcion_args ')' ';' 				{
 														strcpy(temp,$1.cadena);
 														strcat(temp,"-");
-														//printf("comparo %s con %s\n",temp,funcion);
 														if(strcmp(funcion,temp)==0){
 															printf("%s\n",$3.cadena);
 															for(i=0 ; i<64; i++){
@@ -204,7 +186,6 @@ sentencia:
 														}else{
 															printf("%s\n%s ",$3.cadena,$1.cadena);
 														}
-														$$.cadena = genera_cadena(temp);
 													}											
 ;
 
@@ -212,12 +193,7 @@ asignacion:
 	IDENTIF '=' expresion											{ sprintf(temp,"%s%s !\n",$3.cadena, $1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']' '=' expresion						{ sprintf(temp, "%s%s swap cells %s + !\n", $3.cadena, $6.cadena, $1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']' '[' expresion ']' '=' expresion		{   
-																		for(i=0;strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0;i++){
-																			if(i==50){
-																				printf("Error, matrix doesnt exist\n");
-																				return -1;
-																			}
-																		}
+																		i = findMatriz($1.cadena);
 																		sprintf(temp, "%s%s%s* %s+ cells %s + !\n", $9.cadena, $3.cadena, t_simbolos_matrices[i].expresion, $6.cadena, $1.cadena);
 																		$$.cadena=genera_cadena(temp);  
 																	}
@@ -266,12 +242,7 @@ operando:
 	IDENTIF	  											{ sprintf (temp,"%s @ ",$1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']'							{ sprintf (temp,"%s cells %s + @ ", $3.cadena, $1.cadena); $$.cadena = genera_cadena(temp) ; }
 	| IDENTIF '[' expresion ']' '[' expresion ']'		{
-															for(i=0 ; strcmp($1.cadena, t_simbolos_matrices[i].nombre)!=0 ; i++){
-																if(i==50){
-																	printf("Error, matrix doesnt exist\n");
-																	return -1;
-																}
-															}
+															findMatriz($1.cadena);
 															sprintf(temp, "%s%s* %s+ cells %s + @ ", $3.cadena, t_simbolos_matrices[i].expresion, $6.cadena,$1.cadena);
 															$$.cadena=genera_cadena(temp);
 														}
@@ -306,9 +277,9 @@ operando:
 														}
 ;
 funcion_args:
-	/*lambda*/
-	| expresion { sprintf(temp,"%s\n",$1.cadena); $$.cadena = genera_cadena(temp); }
-	| expresion ',' funcion_args{ sprintf(temp,"%s\n%s",$1.cadena,$3.cadena); $$.cadena = genera_cadena(temp); }
+	/*lambda*/						{ $$.cadena = genera_cadena(""); }
+	| expresion 					{ sprintf(temp,"%s\n",$1.cadena); $$.cadena = genera_cadena(temp); }
+	| expresion ',' funcion_args	{ sprintf(temp,"%s\n%s",$1.cadena,$3.cadena); $$.cadena = genera_cadena(temp); }
 ;
 %%
 							// SECCION 4	Codigo en C
@@ -325,6 +296,36 @@ void salirFuncion(){
 		}
 	}
 	num_argumentos = 0;
+}
+void printArgumentos(){
+	for(i=0;i<num_argumentos;i++)
+		printf("%s !\n",argumentos[i]);
+}
+void crearMatriz(char* nombre){
+	if(num_matrices== 50){
+		perror("Creado mas matrices del limite permitido\n");
+		exit(-1);
+	}
+	t_simbolos_matrices[num_matrices].nombre=genera_cadena(nombre);
+	num_matrices++;
+}
+int findMatriz(char* nombre){
+	for(i=0;strcmp(nombre, t_simbolos_matrices[i].nombre)!=0;i++){
+		if(i==50){
+			perror("Error, matrix doesnt exist\n");
+			exit(-1);
+		}
+	}
+	return i;
+}
+void addArgument(char* arg){
+	num_argumentos++;
+	if(num_argumentos>3){
+		perror("Error, too many arguments\n");
+		exit(-1);
+	}
+	sprintf(argumentos[num_argumentos-1],"%s",arg);
+	printf("variable %s\n",argumentos[num_argumentos-1]);
 }
 int yyerror (mensaje)
 char *mensaje ;
@@ -502,7 +503,8 @@ int yylex ()
 							return (IDENTIF) ;
 						}
 					}
-					printf("Demasiadas variables globales\n");
+					perror("Demasiadas variables globales\n");
+					exit(-1);
 				}else{
 					
 					sprintf(temp,"%s%s",funcion,cadena);
@@ -537,7 +539,8 @@ int yylex ()
 							return (IDENTIF) ;
 						}
 					}
-					printf("Demasiadas variables locales");
+					perror("Demasiadas variables locales");
+					exit(-1);
 				}
 		 } else {
 //			   printf ("\nDEV: OTRO %s\n", yylval.cadena) ;	   // PARA DEPURAR
