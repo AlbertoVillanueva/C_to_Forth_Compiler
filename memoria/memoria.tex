@@ -252,7 +252,7 @@
 			;
 		\end{tabbing}
 		\end{tcolorbox}
-		El segundo aspecto que hemos tenido que tratar para la inclusión de vectores en el traductor ha sido la asignación de una variable tipo vector a una expresión. Para ello primero hemos creado una regla nueva que contiene todas las asignaciones y la hemos denominado {\ttfamily asignacion}. En esa regla hemos añadido tanto la asignación para variable de tipo entero como la asignación de variables tipo vector. Y lo que se hace es imprimir en primer lugar la expresión que se corresponde a lo de dentro del corchete del vector (de ello se encarga el no terminal \textit {expresion}), después se imprime la expresión de la derecha del igual (de lo que también se encarga el no terminal \textit {expresion}) y por último como tenemos que intercambiar los valores anteriores en la pila se escribe \textit{swap cells identificador + !} para que este primero en la pila la posicion del vector, eso se convierte en celdas y se le suma al vector para desplazarse el número de posiciones que se pide y al estar ya en esa posicion se asigna el valor.
+		El segundo aspecto que hemos tenido que tratar para la inclusión de vectores en el traductor ha sido la asignación de una variable tipo vector a una expresión. Para ello primero hemos creado una regla nueva que contiene todas las asignaciones y la hemos denominado {\ttfamily asignacion}. En esa regla hemos añadido tanto la asignación para variable de tipo entero como la asignación de variables tipo vector. Y lo que se hace es imprimir en primer lugar la expresión que se corresponde a lo de dentro del corchete del vector (de ello se encarga el no terminal \textit {expresion}), después se imprime la expresión de la derecha del igual (de lo que también se encarga el no terminal \textit {expresion}) y por último como tenemos que intercambiar los valores anteriores en la pila se escribe \textit{swap cells identificador + !} para que este primero en la pila la posición del vector, eso se convierte en celdas y se le suma al vector para desplazarse el número de posiciones que se pide y al estar ya en esa posición se asigna el valor.
 		\begin{tcolorbox}
 		\begin{tabbing}
 			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
@@ -263,7 +263,7 @@
 			;
 		\end{tabbing}
 		\end{tcolorbox}
-		Para llevar a cabo la asignación se ha agregado una produccion a la regla {\ttfamily sentencia} que permite que en el codigo haya asignaciones. También para que se cumpla que se produce una asignación hay que tener en cuenta que el acceder a una posicion del vector nos deposita un valor en la pila luego hay que tratarlo como un operando por lo que haria falta incluir en la regla {\ttfamily operando} una producción que permita identificar que esa expresion es un vector y cuya semántica imprime, después de la impresión del no terminal \textit{expresion}, \textit{cells identificador + @} para acceder al valor de esa posición determinada del vector.
+		Para llevar a cabo la asignación se ha agregado una producción a la regla {\ttfamily sentencia} que permite que en el código haya asignaciones. También para que se cumpla que se produce una asignación hay que tener en cuenta que el acceder a una posición del vector nos deposita un valor en la pila luego hay que tratarlo como un operando por lo que haría falta incluir en la regla {\ttfamily operando} una producción que permita identificar que esa expresión es un vector y cuya semántica imprime, después de la impresión del no terminal \textit{expresion}, \textit{cells identificador + @} para acceder al valor de esa posición determinada del vector.
 		
 		\begin{tcolorbox}
 		\begin{tabbing}
@@ -281,8 +281,8 @@
 		\subsection*{13. Estructura de control FOR }
 		\label{subsec:13}
 		\addcontentsline{toc}{subsection}{\nameref{subsec:13}}
-		Para definir esta estructura de control hemos tenido que pasar las asignaciones a codigo diferido para que se pueda imprimir la tercera asignación despues de que el código se imprima. Para ello hemos tenido que pasar expresion, termino y operando a codigo diferido para que todo de lo que depende asignación también este en codigo diferido.\\
-		Lo primero que hemos hecho ha sido pasar de usar Union a usar una estructura para poder hacer referencia al atributo en el que se guardara, para ello definimos la estructura t\_atributos y definimos YYSTYPE como esa estructura. Además también tuvimos que quitar <cadena> y <valor> de los tokens.
+		Para definir esta estructura de control hemos tenido que pasar las asignaciones a código diferido para que se pueda imprimir la tercera asignación después de que el código se imprima. Para ello hemos tenido que pasar expresión, término y operando a código diferido para que todo de lo que depende asignación también este en código diferido.\\
+		Lo primero que hemos hecho ha sido pasar de usar Union a usar una estructura para poder hacer referencia al atributo en el que se guardara, para ello definimos la estructura \textit{t\_atributos} y definimos \textit{YYSTYPE} como esa estructura. Además también hemos tenido que quitar <cadena> y <valor> de los tokens.
 		\begin{tcolorbox}
 		\begin{tabbing}
 			\hspace*{1cm}\=\kill
@@ -293,8 +293,8 @@
 			\#define YYSTYPE t\_atributos 
 		\end{tabbing}
 		\end{tcolorbox}
-		En la semantica de cada producción en diferido se ha usado una variable temporal temp y con sprintf y genera\_cadena para escribir en \$\$.cadena. También, se han realizado los cambios necesario para que en todas las producciones en las que se usaba expresión se imprima desde ahi.\\
-		De esta forma, finalmente el for quedaria definido asi añadido como producción de la regla sentencia:
+		En la semántica de cada producción en diferido se ha usado una variable temporal \textit {temp} y con \textit{sprintf} y \textit{genera\_cadena} para escribir en \$\$.cadena. También, se han realizado los cambios necesario para que en todas las producciones en las que se usaba expresión se imprima desde ahi.\\
+		De esta forma, finalmente el for quedaría definido así añadido como producción de la regla sentencia:
 		\begin{tcolorbox}
 		\begin{tabbing}
 			\hspace*{1cm}\= \hspace*{5.5cm}\=\kill	
@@ -305,7 +305,7 @@
 		\subsection*{14. Variables tipo matriz }
 		\label{subsec:14}
 		\addcontentsline{toc}{subsection}{\nameref{subsec:14}}
-		Para las matrices se ha añadido la variable t\_simbolos\_matrices que es una tabla de simbolos para almacenar el nombre de la matriz y el el tamaño de la segunda dimension. Para la definicion de las matrices se ha añadido la regla matrix que se añade al final de un vector y en la semantica de la definicion de la variable se ha hecho la creación de la matriz en la tabla de simbolos dependiendo de si esa variable es una matriz, esto ultimo se ha hecho con la variable global isMatrix.
+		Para las matrices se ha añadido la variable \textit{t\_simbolos\_matrices} que es una tabla de símbolos para almacenar el nombre de la matriz y el el tamaño de la segunda dimensión. Para la definición de las matrices se ha añadido la regla {\ttfamily matrix} que se añade al final de un vector y en la semántica de la definición de la variable se ha hecho la creación de la matriz en la tabla de símbolos dependiendo de si esa variable es una matriz, esto último se ha hecho con la variable global isMatrix.
 		\begin{tcolorbox}
 		\begin{tabbing}
 			\hspace*{0.5cm}\=\hspace*{1cm}\= \hspace*{3cm}\=\hspace*{0.5cm}\=\hspace*{0.5cm}\=\kill
@@ -331,7 +331,7 @@
 			;
 		\end{tabbing}
 		\end{tcolorbox}
-		Para la asignación usamos la tabla de simbolos para hacer el desplacamiento adecuado asi que añadimos la siguiente producción a la regla asignación.
+		Para la asignación usamos la tabla de símbolos para hacer el desplacamiento adecuado así que añadimos la siguiente producción a la regla asignación.
 		\begin{tcolorbox}
 		\begin{tabbing}
 			\hspace*{1cm}\=\hspace*{0.5cm}\=\hspace*{0.5cm}\=\kill
@@ -344,15 +344,15 @@
 			\>\}
 		\end{tabbing}
 		\end{tcolorbox}
-		Para usarlo como termino, es muy parecido a la asignación ya que solo se tiene que quitar en la producción = termino y en la semantica se quita el primer \%s para no añadir la expresion despues del = y se quita ! ya que ya no estas haciendo una asignación.
+		Para usarlo como término, es muy parecido a la asignación ya que solo se tiene que quitar en la producción \textit{= termino} y en la semántica se quita el primer \textit{\%s} para no añadir la expresión después del \textit{=} y se quita \textit{!} ya que ya no estás haciendo una asignación.
 		\subsection*{15. Funciones }
 		\label{subsec:15}
 		\addcontentsline{toc}{subsection}{\nameref{subsec:15}}
 		\subsubsection*{Renombramiento de variables}
-		Para las funciones, lo primero que se ha hecho es que el nombre de las variables sea nombreDeFuncion\_nombreDeVariable. Para ello se ha usado la variable global para guardar el nombre de la funcion en la que se esta junto con una barra baja (en la funcion factorial, la variable funcion tendria "factorial\_"). En cuanto se empezaba una funcion se le ponia ese nombre y en cuanto se terminaba se ponia el string vacío, y en el yylex se ponia el nombre de la variable como una concatenacion del nombre de la funcion y el nombre de la variable.\\
-		Ademas de esto, se han hecho otras dos tablas de simbolos, una para las variables globales y otra para las variables locales. Ambas se usan en el yylex a la hora de crear las variables. La de las variables globales se usa para poder llamar a una variable global desde dentro de una funcion y que reconozca que esa variable es global, ademas se ha usado un campo para saber si existe una variable global y otra local con el mismo nombre para que en ese caso use el nombre de la variable local. La de las variables locales se usa para que en las funciones recursivas se guarden el estado actual en la pila de retorno y despues se recojan.
-		\subsubsection*{Definicion de funciones}
-		Para la definicion de las funciones se ha puesto en definicion de variables la funcion void, y la funcion int se ha factorizado junto con la variable int. Para la función se imprimen primero los argumentos y las variables locales, que son definiciones de variables locales, luego se imprime : y el nombre de la funcion y luego se recogen los argumentos de la pila. Después de esto se imprime el codigo que lo imprime el no terminal codigo\_funcion que puede ser vacio o codigo para que pueda haber funciones con solo return. Y finalmente si es de tipo int, se tiene return expresión que imprime la expresion para guardarla en pila.
+		Para las funciones, lo primero que se ha hecho es que el nombre de las variables sea \textit{nombreDeFuncion\_nombreDeVariable}. Para ello se ha usado la variable global para guardar el nombre de la función en la que se esta junto con una barra baja (en la función \textit{factorial}, la variable función tendria \textit{"factorial\_"}). En cuanto se empezaba una función se le ponía ese nombre y en cuanto se terminaba se ponía el string vacío, y en el \textit{yylex} se ponía el nombre de la variable como una concatenación del nombre de la funcioón y el nombre de la variable.\\
+		Además de esto, se han hecho otras dos tablas de símbolos, una para las variables globales y otra para las variables locales. Ambas se usan en el \textit{yylex} a la hora de crear las variables. La de las variables globales se usa para poder llamar a una variable global desde dentro de una función y que reconozca que esa variable es global, además se ha usado un campo para saber si existe una variable global y otra local con el mismo nombre para que en ese caso use el nombre de la variable local. La de las variables locales se usa para que en las funciones recursivas se guarden el estado actual en la pila de retorno y despues se recojan.
+		\subsubsection*{Definición de funciones}
+		Para la definición de las funciones se ha puesto en definición de variables la función \textit{void}, y la función \textit{int} se ha factorizado junto con la variable \textit{int}. Para la función se imprimen primero los argumentos y las variables locales, que son definiciones de variables locales, luego se imprime \textit{:} y el nombre de la función y luego se recogen los argumentos de la pila. Después de esto se imprime el código que lo imprime el no terminal \textit{codigo\_funcion} que puede ser vacio o código para que pueda haber funciones con solo \textit{return}. Y finalmente si es de tipo \textit{int}, se tiene return expresión que imprime la expresión para guardarla en pila.
 		\begin{tcolorbox}
 		\begin{tabbing}
 			\hspace*{0.5cm}\=\hspace*{0.5cm}\= \hspace*{6cm}\=\hspace*{1cm}\=\hspace*{0.5cm}\=\hspace*{0.5cm}\=\kill
@@ -419,8 +419,8 @@
 		\end{tabbing}
 		\end{tcolorbox}
 		\subsubsection*{Llamadas a funciones}
-		Para las llamadas a funciones se tienen que añadir producciones en sentencia (para las llamadas a funciones de tipo void) y en operando (para llamadas a funciones tipo int), las dos son iguales, solo cambia que en la de operandoº se hace con codigo en diferido.\\
-		Lo primero que se hace, es que los argumentos se guardan en pila, de esto se encarga el no terminal funcion\_args, despues se mira si la funcion es una llamada recursiva, si lo es, se guardan todas las variables locales en la pila de retorno se imprime recurse y luego se recuperan todas las variables locales, y si no es una funcion recursiva, simplemente se escribe el nombre de la funcion para hacer la llamada.
+		Para las llamadas a funciones se tienen que añadir producciones en la regla {\ttfamily sentencia} (para las llamadas a funciones de tipo void) y en {}\ttfamily operando} (para llamadas a funciones tipo int), las dos son iguales, solo cambia que en la de operando se hace con código en diferido.\\
+		Lo primero que se hace, es que los argumentos se guardan en pila, de esto se encarga el no terminal \textit{funcion\_args}, después se mira si la función es una llamada recursiva, si lo es, se guardan todas las variables locales en la pila de retorno, se imprime \textit{recurse} y luego se recuperan todas las variables locales, y si no es una función recursiva, simplemente se escribe el nombre de la función para hacer la llamada.
 		
 		\begin{tcolorbox}
 		\begin{tabbing}
