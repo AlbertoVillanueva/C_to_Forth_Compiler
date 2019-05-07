@@ -120,7 +120,7 @@
             \> \> def\_var\\
             ;
 		\end{tabbing}
-        \subsection*{5. do-while}
+        \subsection*{5. Estructura de control do-while}
         Para definir el bucle do-while se ha creado una producción en la regla {\ttfamily sentencia} la cual escribe \textit {begin} cuando lee el do, a continuación el no terminal \textit {codigo} escribe el código, después el no terminal \textit {expresion} escribe la condición del bucle y por último se escribe \textit {while repeat}.
         \begin{tabbing}
         \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
@@ -149,7 +149,7 @@
             \>| operando ADDER \%prec POSTFIX\> \>  \{ printf ("1+ ") ; \}\\
             \>| operando SUBSTRACTER \%prec POSTFIX\> \> \{ printf ("1- ") ; \}
         \end{tabbing}
-        \subsection*{7. If}
+        \subsection*{7. Estructura de control If}
         Para incluir la estructura de control if se ha añadido una producción en la regla {\ttfamily sentencia} donde se deja que se imprima la condición mediante el no terminal \textit {expresion} y después se imprime \textit {if}. Luego se deja que se imprima el código y el resto del if, que puede ser o nada o un \textit {else} que iría seguido de su código correspondiente, y finalmente se imprime el {\textit then} para indicar la finalización del código.
         \begin{tabbing}
             \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
@@ -195,6 +195,46 @@
 			
 		\end{tabbing}
 		Además para evitar conflictos de \textit {shit/reduce} se ha tenido que añadir precedencia al operando '?'.
+		\subsection*{12. Adición de vectores}
+		Para tratar los vectores tenemos que tener en cuenta 2 aspectos el primero de ellos es la declaración de variables para lo cual a la producción de la regla {\ttfamily def\_var} se ha añadido un no terminal que es \textit {restoDef\_var} cuya regla es la encargada de imprimir, después de \textit {variable} y del identificador, lo necesario para poder identificar que se trata de una variable tipo vector después de que el no terminal \textit {expresion} haya impreso el valor de la expresión.
+		\begin{tabbing}
+            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+			def\_var:   \\           
+				\> /* lambda */\> \>		\{ ; \}\\
+				 \>| INTEGER IDENTIF\> \> \{ printf ("variable \%s ", \$2);\} \\
+				 \>restoDef\_var';' def\_var\\
+			 ;\\
+			 
+			restoDef\_var:\\
+					\> /* lambda */ \> \>		\{ printf("\textbackslash n"); \} \\
+					\>|'[' expresion ']'\> \>	\{ printf("1 - cells allot\textbackslash n");\} \\
+			;
+			
+		\end{tabbing}
+		El segundo aspecto que hemos tenido que tratar para la inclusión de vectores en el traductor ha sido la asignación de una variable tipo vector a una expresión. Para ello primero hemos creado una regla nueva que contiene todas las asignaciones y la hemos denominado {\ttfamily asignacion}. En esa regla hemos añadido tanto la asignación para variable de tipo entero como la asignación de variables tipo vector. Y lo que se hace es imprimir en primer lugar la expresión que se corresponde a lo de dentro del corchete del vector (de ello se encarga el no terminal \textit {expresion}), después se imprime la expresión de la derecha del igual (de lo que también se encarga el no terminal \textit {expresion}) y por último como tenemos que intercambiar los valores anteriores en la pila se escribe \textit{swap cells identificador + !}. Para llevar a cabo la asignación se ha agregado una produccion a la regla {\ttfamily sentencia} que permite que en el codigo haya asignaciones. También para que se cumpla que se produce una asignación hay que tener en cuenta que el no terminal \textit{expresion} puede ser también un vector por lo que haria falta incluir en la regla {\ttfamily operando} una producción que permita identificar que esa expresion es un vector y cuya semántica imprime, después de la impresión del no terminal \textit{expresion}, \textit{cells identificador + @}.
+		\begin{tabbing}
+            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
+			asignacion:\\
+				\>IDENTIF '=' expresion\> \>											\{printf ("\%s !\textbackslash n", \$1);\}\\
+				\>| IDENTIF '[' expresion ']' '=' expresion\> \>						\{printf ("swap cells \%s + !\textbackslash n", \$1\}\\
+	
+			;\\
+			sentencia:\\
+				\>asignacion';'\\
+				\>\textit{resto de producciones....}\\
+			
+		\end{tabbing}
+		\begin{tabbing}
+            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+		operando:\\      
+				\>IDENTIF\> \>      		\{ printf ("\%s @ ", \$1) ; \}\\
+				\>| IDENTIF '[' expresion ']'\> \> \{ printf ("cells \%s + @ ", \$1) ; \}
+			
+		\end{tabbing}
+		\subsection*{13. Estructura de control FOR }
+		\subsection*{14. Variables tipo matriz }
+		\subsection*{15. Funciones }
+		
 	\section{Cambios en los ficheros de pruebas}.
 	Los únicos ficheros de pruebas que han tenido que ser modificados han sido factorial.c y potencias.c ya que incluian un comentario que usaba variables las cuales no se corresponden con las variables que utliza Forth de modo que hemos tenido que cambiar el comentario y poner el nombre de la variable correspondiente.\\ \\
 	Además se ha añadido un fichero de pruebas avanzadas para ver el funcionamiento de las llamadas recursivas a funciones ya que este no venía incluido en el directorio de pruebas proporcionado en aula global.
