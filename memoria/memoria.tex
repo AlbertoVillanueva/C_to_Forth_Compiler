@@ -104,105 +104,123 @@
 	La ejecución de dicha práctica consiste en la elaboración de un tradcutor de lenguaje C a lenguaje Forth, para lo cuál partiendo de una grámatica hemos ido modificandola para adaptarla a los diferentes puntos pedidos. En este documento se presenta como se ha progresado en cada punto hasta tener la versión final del código, puesto que durante los primeros puntos hasta llegar al apartado donde hay que implementar el FOR todo había sido hecho sin necesidad de código diferido.
 	\section{Apartados Implementados}
 		\subsection*{4. Variables Locales}
-        Para definir las variables locales de la función \textit {main}, hemos decido poner la semántica de imprimir el nombre de la función después de la parte de la definición de variables y en la semántica de definición de variables se imprimen estas.  
-        \begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
-            principal:\\
-            \> MAIN '(' ')' '\{' def\_var \>\> \{ printf (": main \textbackslash n"); \}\\
-            \> \> codigo '\}'\>   \{ printf (";\textbackslash n"); \}\\
-            ;
-        \end{tabbing}
-        \begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
-            def\_var:\\
-            \> /* lambda */\>\>		\{ ; \}\\
-            \> | INTEGER IDENTIF ';'\>\> \{ printf("variable \%s \textbackslash n", \$2);\}		\\
-            \> \> def\_var\\
-            ;
+		\label{subsec:4}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:4}}
+		Para definir las variables locales de la función \textit {main}, hemos decido poner la semántica de imprimir el nombre de la función después de la parte de la definición de variables y en la semántica de definición de variables se imprimen estas.  
+		\begin{tabbing}
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+			principal:\\
+			\> MAIN '(' ')' '\{' def\_var \>\> \{ printf (": main \textbackslash n"); \}\\
+			\> \> codigo '\}'\>   \{ printf (";\textbackslash n"); \}\\
+			;
 		\end{tabbing}
-        \subsection*{5. Estructura de control do-while}
-        Para definir el bucle do-while se ha creado una producción en la regla {\ttfamily sentencia} la cual escribe \textit {begin} cuando lee el do, a continuación el no terminal \textit {codigo} escribe el código, después el no terminal \textit {expresion} escribe la condición del bucle y por último se escribe \textit {while repeat}.
-        \begin{tabbing}
-        \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
-        \>|DO\>\>											\{ printf("begin\textbackslash n"); \}\\
-        \>'\{' codigo '\}' WHILE '(' expresion ')' ';'\> \> \{ printf("while repeat \textbackslash n"); \}\\
-        \end{tabbing}
-        \subsection*{6. Operadores logicos}
-        Para los operadores de más de un caracter se han añadido tokens que permitirán reconocer esos operadores ya que en la estructura de palabras reservadas que se utiliza en el \textit {yylex} se ha añadido la definición de cada caracter y el token que lleva asociado para que cuando el \textit {yylex} detecte el operador pueda devolver el token y la gramática lo pueda reconocer. También se han establecido las precedencias necesarias para evitar que se produzcan conflictos de \textit {shift} y \textit {reduce}. Hay dos tipos de operadores que hemos tenido que añadir, los operadores binarios para los que se ha añadido una producción a la regla {\ttfamily expresion} de la forma: \textit {expresion operador expresion}, y para la impresión se deja que los no terminales \textit {expresion} impriman las expresiones y luego se imprime el operador correspondiente.
-        \begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
-            \>| expresion  EQUAL expresion\> \>	    \{ printf  ("= ") ; \}\\
-            \>| expresion  UNEQUAL expresion\> \>	    \{ printf  ("= 0= ") ; \}\\
-            \>| expresion  LESSOREQ expresion\> \>	\{ printf  ("<= ") ; \}\\
-            \>| expresion  '<' expresion\> \>		    \{ printf  ("< ") ; \}\\
-            \>| expresion  '>' expresion\> \>	        \{ printf  ("> ") ; \}\\
-            \>| expresion  '\&' expresion\> \>		    \{ printf  ("and ") ; \}\\
-            \>| expresion  '|' expresion\> \>		    \{ printf  ("or ") ; \}\\
-            \>| expresion  AND expresion\> \>	        \{ printf  ("and ") ; \}\\
-            \>| expresion  OR expresion\> \>	        \{ printf  ("or ") ; \}\\
-            \>| expresion  '\%' expresion\> \>		    \{ printf  ("mod ") ; \}
-        \end{tabbing}
-        Los otros operadores son de tipo unario, para estos se ha añadido una producción en la regla {\ttfamily termino} donde se ha dejado que el no terminal \textit {operando} imprima el operando y luego se imprime el operador unario correspondiente.
-        \begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
-            \>| '!' operando \%prec SIGNO\_UNARIO\> \>  \{ printf ("0= ") ; \}\\
-            \>| operando ADDER \%prec POSTFIX\> \>  \{ printf ("1+ ") ; \}\\
-            \>| operando SUBSTRACTER \%prec POSTFIX\> \> \{ printf ("1- ") ; \}
-        \end{tabbing}
-        \subsection*{7. Estructura de control If}
-        Para incluir la estructura de control if se ha añadido una producción en la regla {\ttfamily sentencia} donde se deja que se imprima la condición mediante el no terminal \textit {expresion} y después se imprime \textit {if}. Luego se deja que se imprima el código y el resto del if, que puede ser o nada o un \textit {else} que iría seguido de su código correspondiente, y finalmente se imprime el {\textit then} para indicar la finalización del código.
-        \begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
-            \>| IF '(' expresion ')'\>\> \{printf("if\textbackslash n");\}\\
-            \>\>'\{' codigo '\}' restoIf\> \{printf("then\textbackslash n");\}\\
-        \end{tabbing}
-        \begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
-            restoIf:\\
-            \>/* lambda */ \\
-            \>| ELSE\>\> \{printf("else\textbackslash n");\}\\
-            \>'\{' codigo '\}'\\
-            ;
+		\begin{tabbing}
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+			def\_var:\\
+			\> /* lambda */\>\>		\{ ; \}\\
+			\> | INTEGER IDENTIF ';'\>\> \{ printf("variable \%s \textbackslash n", \$2);\}		\\
+			\> \> def\_var\\
+			;
+		\end{tabbing}
+		\subsection*{5. Estructura de control do-while}
+		\label{subsec:5}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:5}}
+		Para definir el bucle do-while se ha creado una producción en la regla {\ttfamily sentencia} la cual escribe \textit {begin} cuando lee el do, a continuación el no terminal \textit {codigo} escribe el código, después el no terminal \textit {expresion} escribe la condición del bucle y por último se escribe \textit {while repeat}.
+		\begin{tabbing}
+		\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
+		\>|DO\>\>											\{ printf("begin\textbackslash n"); \}\\
+		\>'\{' codigo '\}' WHILE '(' expresion ')' ';'\> \> \{ printf("while repeat \textbackslash n"); \}\\
+		\end{tabbing}
+		\subsection*{6. Operadores logicos}
+		\label{subsec:6}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:6}}
+		Para los operadores de más de un caracter se han añadido tokens que permitirán reconocer esos operadores ya que en la estructura de palabras reservadas que se utiliza en el \textit {yylex} se ha añadido la definición de cada caracter y el token que lleva asociado para que cuando el \textit {yylex} detecte el operador pueda devolver el token y la gramática lo pueda reconocer. También se han establecido las precedencias necesarias para evitar que se produzcan conflictos de \textit {shift} y \textit {reduce}. Hay dos tipos de operadores que hemos tenido que añadir, los operadores binarios para los que se ha añadido una producción a la regla {\ttfamily expresion} de la forma: \textit {expresion operador expresion}, y para la impresión se deja que los no terminales \textit {expresion} impriman las expresiones y luego se imprime el operador correspondiente.
+		\begin{tabbing}
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
+			\>| expresion  EQUAL expresion\> \>		\{ printf  ("= ") ; \}\\
+			\>| expresion  UNEQUAL expresion\> \>		\{ printf  ("= 0= ") ; \}\\
+			\>| expresion  LESSOREQ expresion\> \>	\{ printf  ("<= ") ; \}\\
+			\>| expresion  '<' expresion\> \>			\{ printf  ("< ") ; \}\\
+			\>| expresion  '>' expresion\> \>			\{ printf  ("> ") ; \}\\
+			\>| expresion  '\&' expresion\> \>			\{ printf  ("and ") ; \}\\
+			\>| expresion  '|' expresion\> \>			\{ printf  ("or ") ; \}\\
+			\>| expresion  AND expresion\> \>			\{ printf  ("and ") ; \}\\
+			\>| expresion  OR expresion\> \>			\{ printf  ("or ") ; \}\\
+			\>| expresion  '\%' expresion\> \>			\{ printf  ("mod ") ; \}
+		\end{tabbing}
+		Los otros operadores son de tipo unario, para estos se ha añadido una producción en la regla {\ttfamily termino} donde se ha dejado que el no terminal \textit {operando} imprima el operando y luego se imprime el operador unario correspondiente.
+		\begin{tabbing}
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
+			\>| '!' operando \%prec SIGNO\_UNARIO\> \>  \{ printf ("0= ") ; \}\\
+			\>| operando ADDER \%prec POSTFIX\> \>  \{ printf ("1+ ") ; \}\\
+			\>| operando SUBSTRACTER \%prec POSTFIX\> \> \{ printf ("1- ") ; \}
+		\end{tabbing}
+		\subsection*{7. Estructura de control If}
+		\label{subsec:7}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:7}}
+		Para incluir la estructura de control if se ha añadido una producción en la regla {\ttfamily sentencia} donde se deja que se imprima la condición mediante el no terminal \textit {expresion} y después se imprime \textit {if}. Luego se deja que se imprima el código y el resto del if, que puede ser o nada o un \textit {else} que iría seguido de su código correspondiente, y finalmente se imprime el {\textit then} para indicar la finalización del código.
+		\begin{tabbing}
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
+			\>| IF '(' expresion ')'\>\> \{printf("if\textbackslash n");\}\\
+			\>\>'\{' codigo '\}' restoIf\> \{printf("then\textbackslash n");\}\\
+		\end{tabbing}
+		\begin{tabbing}
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
+			restoIf:\\
+			\>/* lambda */ \\
+			\>| ELSE\>\> \{printf("else\textbackslash n");\}\\
+			\>\>'\{' codigo '\}'\\
+			;
 		\end{tabbing}
 		\subsection*{9. Impresión de cadenas mediante puts}
+		\label{subsec:9}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:9}}
 		Para la realización de este punto se ha añadido un token para identificar la función (también se ha añadido a la estrutura de palabras reservadas la definición y el token generado para que el \textit {yylex} pueda reconocerlo) y una producción a la regla {\ttfamily sentencia} que permite deteminar que hacer cuando se encuentra con la función \textit {puts} que se encarga de imprimir por pantalla un texto. Para traducirlo a forth lo que se ha hecho es imprimir en la semántica un punto al principio y después entre comillas el token identificado como STRING que es el texto que ha reconocido el \textit {yylex}.
 		\begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
-            \>| PUTS '(' STRING ')' ';'\> \>		\{ printf(". \textbackslash "  \%s\textbackslash " \textbackslash n" ,\$3); \}
-            ;
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+			\>| PUTS '(' STRING ')' ';'\> \>		\{ printf(". \textbackslash "  \%s\textbackslash " \textbackslash n" ,\$3); \}
+			;
 		\end{tabbing}
 		\subsection*{10. Imprimir expresiones (printf)}
+		\label{subsec:10}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:10}}
 		Para conseguir imprimir expresiones lo que se ha hecho es añadir un token que permita identificar la función (también se ha añadido a la estrutura de palabras reservadas la definición y el token generado para que el \textit {yylex} pueda reconocerlo) y una producción a la regla {\ttfamily sentencia} donde no se imprime nada sino que es la regla {\ttfamily expresiones} la cual está formada por dos producciones donde el no terminal \textit {expresion} es el encargado de imprimir la exprsion y después se imprime un punto que indica que se tiene que imprimir el valor de la expresión.
 		\begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
-            | PRINTF '(' STRING ',' expresiones ')' ';'
-            ;
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+			\> | PRINTF '(' STRING ',' expresiones ')' ';'
+			;
 		\end{tabbing}
 		\begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
-            expresiones:\\
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
+			expresiones:\\
 					\>| expresion\> \> \{ printf(" .\textbackslash n"); \}\\
 					\>| expresion\> \> \{ printf(" . "); \}\\
-					\>',' expresiones\\
+					\>\>',' expresiones\\
 			;
 		\end{tabbing}
 		La regla {\ttfamily expresiones} se usa para permitir que a la función \textit {printf} se le puedan pasar una o más expresiones que imprimir.
 		\subsection*{11. Operador ternario}
+		\label{subsec:11}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:11}}
 		Para el funcionamiento de este punto hemos agregado una producción a la regla {\ttfamily expresion} en la cual el primer no terminal \textit {expresion} se encarga de imprimir la expresión correspondiente, después cuando el operador ternario es leído se imprime \textit {if}, el siguiente no terminal \textit {expresion} otra expresión, después al leer los dos puntos se imprime \textit {else} tras el cual el último no terminal de \textit {expresion} imprime su expresión y para cerra se imprime \textit {then}.
 		\begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{6cm}\=\kill
-			| expresion '?' \{printf("if\textbackslash n");\} expresion ':'\{printf("\textbackslash nelse\textbackslash n");\} expresion \{printf("\textbackslash nthen\textbackslash n");\}
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+			\>| expresion '?' \>\> \{printf("if\textbackslash n");\}\\
+			\>\>expresion ':'\>\{printf("\textbackslash nelse\textbackslash n");\}\\
+			\>\>expresion \>\{printf("\textbackslash nthen\textbackslash n");\}
 			
 		\end{tabbing}
 		Además para evitar conflictos de \textit {shit/reduce} se ha tenido que añadir precedencia al operando '?'.
 		\subsection*{12. Adición de vectores}
-		Para tratar los vectores tenemos que tener en cuenta 2 aspectos el primero de ellos es la declaración de variables para lo cual a la producción de la regla {\ttfamily def\_var} se ha añadido un no terminal que es \textit {restoDef\_var} cuya regla es la encargada de imprimir, después de \textit {variable} y del identificador, lo necesario para poder identificar que se trata de una variable tipo vector después de que el no terminal \textit {expresion} haya impreso el valor de la expresión.
+		\label{subsec:12}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:12}}
+		Para tratar los vectores tenemos que tener en cuenta 2 aspectos el primero de ellos es la declaración de variables para lo cual a la producción de la regla {\ttfamily def\_var} se ha añadido un no terminal después de \textit {variable} y del identificador que es \textit {restoDef\_var} cuya regla es la encargada de imprimir lo necesario para reservar suficiente memoria para el vector.
 		\begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
-			def\_var:   \\           
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
+			def\_var:   \\		   
 				\> /* lambda */\> \>		\{ ; \}\\
 				 \>| INTEGER IDENTIF\> \> \{ printf ("variable \%s ", \$2);\} \\
-				 \>restoDef\_var';' def\_var\\
+				 \>\>restoDef\_var';' def\_var\\
 			 ;\\
 			 
 			restoDef\_var:\\
@@ -211,34 +229,55 @@
 			;
 			
 		\end{tabbing}
-		El segundo aspecto que hemos tenido que tratar para la inclusión de vectores en el traductor ha sido la asignación de una variable tipo vector a una expresión. Para ello primero hemos creado una regla nueva que contiene todas las asignaciones y la hemos denominado {\ttfamily asignacion}. En esa regla hemos añadido tanto la asignación para variable de tipo entero como la asignación de variables tipo vector. Y lo que se hace es imprimir en primer lugar la expresión que se corresponde a lo de dentro del corchete del vector (de ello se encarga el no terminal \textit {expresion}), después se imprime la expresión de la derecha del igual (de lo que también se encarga el no terminal \textit {expresion}) y por último como tenemos que intercambiar los valores anteriores en la pila se escribe \textit{swap cells identificador + !}. Para llevar a cabo la asignación se ha agregado una produccion a la regla {\ttfamily sentencia} que permite que en el codigo haya asignaciones. También para que se cumpla que se produce una asignación hay que tener en cuenta que el no terminal \textit{expresion} puede ser también un vector por lo que haria falta incluir en la regla {\ttfamily operando} una producción que permita identificar que esa expresion es un vector y cuya semántica imprime, después de la impresión del no terminal \textit{expresion}, \textit{cells identificador + @}.
+		El segundo aspecto que hemos tenido que tratar para la inclusión de vectores en el traductor ha sido la asignación de una variable tipo vector a una expresión. Para ello primero hemos creado una regla nueva que contiene todas las asignaciones y la hemos denominado {\ttfamily asignacion}. En esa regla hemos añadido tanto la asignación para variable de tipo entero como la asignación de variables tipo vector. Y lo que se hace es imprimir en primer lugar la expresión que se corresponde a lo de dentro del corchete del vector (de ello se encarga el no terminal \textit {expresion}), después se imprime la expresión de la derecha del igual (de lo que también se encarga el no terminal \textit {expresion}) y por último como tenemos que intercambiar los valores anteriores en la pila se escribe \textit{swap cells identificador + !} para que este primero en la pila la posicion del vector, eso se convierte en celdas y se le suma al vector para desplazarse el número de posiciones que se pide y al estar ya en esa posicion se asigna el valor.
 		\begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{8cm}\=\kill
 			asignacion:\\
 				\>IDENTIF '=' expresion\> \>											\{printf ("\%s !\textbackslash n", \$1);\}\\
 				\>| IDENTIF '[' expresion ']' '=' expresion\> \>						\{printf ("swap cells \%s + !\textbackslash n", \$1\}\\
 	
 			;\\
+			
+			
+		\end{tabbing}
+		Para llevar a cabo la asignación se ha agregado una produccion a la regla {\ttfamily sentencia} que permite que en el codigo haya asignaciones. También para que se cumpla que se produce una asignación hay que tener en cuenta que el acceder a una posicion del vector nos deposita un valor en la pila luego hay que tratarlo como un operando por lo que haria falta incluir en la regla {\ttfamily operando} una producción que permita identificar que esa expresion es un vector y cuya semántica imprime, después de la impresión del no terminal \textit{expresion}, \textit{cells identificador + @} para acceder al valor de esa posición determinada del vector.
+		
+		\begin{tabbing}
+			\hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
 			sentencia:\\
 				\>asignacion';'\\
-				\>\textit{resto de producciones....}\\
-			
-		\end{tabbing}
-		\begin{tabbing}
-            \hspace*{1cm}\=\hspace*{1cm}\= \hspace*{4cm}\=\kill
-		operando:\\      
-				\>IDENTIF\> \>      		\{ printf ("\%s @ ", \$1) ; \}\\
-				\>| IDENTIF '[' expresion ']'\> \> \{ printf ("cells \%s + @ ", \$1) ; \}
-			
+				\>\textit{...}\\
+			;\\
+			operando:\\	  
+				\>IDENTIF\> \>	  		\{ printf ("\%s @ ", \$1) ; \}\\
+				\>| IDENTIF '[' expresion ']'\> \> \{ printf ("cells \%s + @ ", \$1) ; \}\\
+			;
 		\end{tabbing}
 		\subsection*{13. Estructura de control FOR }
+		\label{subsec:13}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:13}}
+		Para definir esta estructura de control hemos tenido que pasar las asignaciones a codigo diferido para que se pueda imprimir la tercera asignación despues de que el código se imprima. Para ello hemos tenido que pasar expresion, termino y operando a codigo diferido para que todo de lo que depende asignación también este en codigo diferido.\\
+		Lo primero que hemos hecho ha sido pasar de usar Union a usar una estructura para poder hacer referencia al atributo en el que se guardara, para ello definimos la estructura t\_atributos y definimos YYSTYPE como esa estructura
+		\begin{tabbing}
+			\hspace*{1cm}\=
+			typedef struct s\_atributos \{ \\
+			\>	int valor;\\
+			\>	char *cadena ;\\
+			\} t\_atributos ; \\
+			\#define YYSTYPE t\_atributos 
+		\end{tabbing}
 		\subsection*{14. Variables tipo matriz }
+		\label{subsec:14}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:14}}
+
 		\subsection*{15. Funciones }
+		\label{subsec:15}
+		\addcontentsline{toc}{subsection}{\nameref{subsec:15}}
 		
-	\section{Cambios en los ficheros de pruebas}.
-	Los únicos ficheros de pruebas que han tenido que ser modificados han sido factorial.c y potencias.c ya que incluian un comentario que usaba variables las cuales no se corresponden con las variables que utliza Forth de modo que hemos tenido que cambiar el comentario y poner el nombre de la variable correspondiente.\\ \\
+	\section{Cambios en los ficheros de pruebas}
+	Los únicos ficheros de pruebas que han tenido que ser modificados han sido factorial.c y potencias.c ya que incluian un comentario que usaba variables las cuales no se corresponden con las variables que utliza Forth de modo que hemos tenido que cambiar el comentario y poner el nombre de la variable correspondiente.\\
 	Además se ha añadido un fichero de pruebas avanzadas para ver el funcionamiento de las llamadas recursivas a funciones ya que este no venía incluido en el directorio de pruebas proporcionado en aula global.
 	\section{Conclusión}
-	La realización de esta práctica, junto con las prácticas guiadas que se han llevado a cabo antes de la práctica final, no han servido para conocer otro lenguaje que desconociamos y para asentar los conocimientos de la asignatura, sobre todo en temas del uso de semántica en diferido. También nos ha permito conocer otras herramientas como es bison.\\ \\
+	La realización de esta práctica, junto con las prácticas guiadas que se han llevado a cabo antes de la práctica final, no han servido para conocer otro lenguaje que desconociamos y para asentar los conocimientos de la asignatura, sobre todo en temas del uso de semántica en diferido. También nos ha permito conocer otras herramientas como es bison.\\
 	Durante la realización de la práctica nos hemos encontrado con varios problemas. Entre ellos el más frecuente ha sido la aparición de conflictos \textit {shift/reduce} que surgian principalmente por el tema de precedencias, lo cual también nos ha costado entender en un principio. Otro problema grande que nos encontramos fue al llegar a la parte del FOR ya que es ahí donde hay que llevar a cabo la parte de diferido, ya que en un principio tratamos de hacerlo a través de \textit {union} pero finalmente tuvimos que quitarlo y crear una estructura para los atributos de los tokens. Y el último gran problema que nos hemos encontrado ha sido conseguir que las funciones recursivas llegasen a funcionar puesto que no connociamos la existencia de la pila de retorno ni la función que hacia el \textit {recurse}.
 	\end{document}
