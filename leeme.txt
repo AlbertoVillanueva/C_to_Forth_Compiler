@@ -1,7 +1,7 @@
 Tan solo se han tenido que modificar pruebas avanzadas y estas han sido:
 
 - Para la prueba factorial1.c se han modificado
-		//@ ." n=" n @ .                    -> //@ ." main_n=" main_n @ .
+		//@ ." n=" n @ .					-> //@ ." main_n=" main_n @ .
 		//@ ." resultado=" resultado @ . cr -> //@ ." main_n=" main_n @ .
 - Y para la prueba potencias.c se ha modificado
-		//@  i @ . ." : "              -> //@  main_i @ . ." : "
+		//@  i @ . ." : "			  		-> //@  main_i @ . ." : "
