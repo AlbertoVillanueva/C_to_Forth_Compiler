@@ -70,9 +70,9 @@ char *genera_cadena () ;
 %%
 										  // Seccion 3 Gramatica - Semantico
 programa:
-						{salirFuncion();}
+					{salirFuncion();}
 	def_var
-	 principal	{ ; }
+		principal	{ ; }
 ;
 
 principal:  
@@ -83,7 +83,6 @@ principal:
   
 def_var:
 	/* lambda */		{ ; }
-
 	| INTEGER 								{ declarando = 1; }
 		restoVariable_funcion def_var
 	|VOID IDENTIF 							{
@@ -122,10 +121,14 @@ restoVariable_funcion:
 											printf (": %s\n",$1.cadena);
 											printArgumentos();
 										}
-		codigo RETURN expresion ';' '}'	{
-											printf ("\n%s\n;\n",$11.cadena);
+		codigo_funcion  RETURN expresion ';' '}'	{
+														printf ("\n%s\n;\n",$11.cadena);
 											salirFuncion();
-										}
+													}
+;
+codigo_funcion:
+	/*lambda*/
+	|codigo
 ;
 argumentos:
 	/*lambda*/			{num_argumentos = 0;}
@@ -191,7 +194,7 @@ sentencia:
 
 asignacion:
 	IDENTIF '=' expresion											{ sprintf(temp,"%s%s !\n",$3.cadena, $1.cadena); $$.cadena=genera_cadena(temp); }
-	| IDENTIF '[' expresion ']' '=' expresion						{ sprintf(temp, "%s%s swap cells %s + !\n", $3.cadena, $6.cadena, $1.cadena); $$.cadena=genera_cadena(temp); }
+	| IDENTIF '[' expresion ']' '=' expresion						{ sprintf(temp, "%s%s cells %s + !\n", $6.cadena, $3.cadena, $1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']' '[' expresion ']' '=' expresion		{   
 																		i = findMatriz($1.cadena);
 																		sprintf(temp, "%s%s%s* %s+ cells %s + !\n", $9.cadena, $3.cadena, t_simbolos_matrices[i].expresion, $6.cadena, $1.cadena);
@@ -199,7 +202,6 @@ asignacion:
 																	}
 ;
 expresiones:
-	/*lambda*/
 	| expresion { printf("%s.\n",$1.cadena); }
 	| expresion { printf("%s. ",$1.cadena); }
 		',' expresiones
@@ -242,7 +244,7 @@ operando:
 	IDENTIF	  											{ sprintf (temp,"%s @ ",$1.cadena); $$.cadena=genera_cadena(temp); }
 	| IDENTIF '[' expresion ']'							{ sprintf (temp,"%s cells %s + @ ", $3.cadena, $1.cadena); $$.cadena = genera_cadena(temp) ; }
 	| IDENTIF '[' expresion ']' '[' expresion ']'		{
-															findMatriz($1.cadena);
+															i = findMatriz($1.cadena);
 															sprintf(temp, "%s%s* %s+ cells %s + @ ", $3.cadena, t_simbolos_matrices[i].expresion, $6.cadena,$1.cadena);
 															$$.cadena=genera_cadena(temp);
 														}
@@ -251,7 +253,6 @@ operando:
 	| IDENTIF '(' funcion_args ')' 						{
 															strcpy(temp,$1.cadena);
 															strcat(temp,"_");
-															//printf("comparo %s con %s\n",temp,funcion);
 															if(strcmp(funcion,temp)==0){
 																sprintf(temp,"%s\n",$3.cadena);
 																for(i=0 ; i<64; i++){
